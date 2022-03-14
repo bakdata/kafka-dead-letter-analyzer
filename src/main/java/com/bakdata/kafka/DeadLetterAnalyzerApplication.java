@@ -40,7 +40,7 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
     private static final String EXAMPLES = "examples";
     private static final String STATS = "stats";
     @Option(names = "--max-size", description = "Maximum size of dead letters to send to output and examples topic")
-    private final Integer maxSize = Integer.MAX_VALUE;
+    private final int maxSize = Integer.MAX_VALUE;
 
     public static void main(final String[] args) {
         KafkaStreamsApplication.startApplication(new DeadLetterAnalyzerApplication(), args);

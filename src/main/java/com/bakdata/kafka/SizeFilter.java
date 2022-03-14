@@ -41,20 +41,20 @@ import org.apache.avro.specific.SpecificRecord;
 class SizeFilter {
     private final int maxSize;
 
-    private static String writeAsJson(final SpecificRecord record) throws IOException {
-        final Schema schema = record.getSchema();
+    private static String writeAsJson(final SpecificRecord specificRecord) throws IOException {
+        final Schema schema = specificRecord.getSchema();
         final DatumWriter<SpecificRecord> writer = new SpecificDatumWriter<>(schema);
         try (final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             final JsonEncoder jsonEncoder = EncoderFactory.get().jsonEncoder(schema, out);
-            writer.write(record, jsonEncoder);
+            writer.write(specificRecord, jsonEncoder);
             jsonEncoder.flush();
             return out.toString();
         }
     }
 
-    boolean filterMaxSize(final Object key, final SpecificRecord record) {
+    boolean filterMaxSize(final Object key, final SpecificRecord specificRecord) {
         try {
-            final boolean isBelowMaxSize = writeAsJson(record).length() <= this.maxSize;
+            final boolean isBelowMaxSize = writeAsJson(specificRecord).length() <= this.maxSize;
             if (!isBelowMaxSize) {
                 log.warn("Filtering record {} because it exceeds the maximum record size", key);
             }

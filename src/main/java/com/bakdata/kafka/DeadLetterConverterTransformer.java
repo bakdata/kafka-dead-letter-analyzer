@@ -42,9 +42,9 @@ class DeadLetterConverterTransformer implements ValueTransformer<Object, DeadLet
     }
 
     @Override
-    public DeadLetter transform(final Object record) {
+    public DeadLetter transform(final Object o) {
         final DeadLetterConverter converter = this.factory.apply(this.context.headers());
-        return converter.convert(record);
+        return converter.convert(o);
     }
 
     @Override
