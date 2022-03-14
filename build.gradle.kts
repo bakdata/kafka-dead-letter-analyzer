@@ -11,7 +11,7 @@ plugins {
     id("org.hildan.github.changelog") version "0.8.0"
     id("io.freefair.lombok") version "5.3.3.3"
     id("com.google.cloud.tools.jib") version "3.1.4"
-    id("com.bakdata.avro") version "1.0.0"
+    id("com.bakdata.avro") version "0.0.1"
 }
 
 allprojects {
@@ -29,7 +29,7 @@ allprojects {
     }
 }
 
-configure<JavaPluginConvention> {
+configure<JavaPluginExtension> {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
 }
