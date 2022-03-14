@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "DeadLetterWithContext",
+  "namespace": "com.bakdata.kafka",
+  "fields": [
+    {
+      "name": "context",
+      "type": "Context"
+    },
+    {
+      "name": "dead_letter",
+      "type": "DeadLetter"
+    }
+  ]
+}

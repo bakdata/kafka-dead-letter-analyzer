@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "ErrorExample",
+  "namespace": "com.bakdata.kafka",
+  "fields": [
+    {
+      "name": "example",
+      "type": "FormattedDeadLetterWithContext"
+    },
+    {
+      "name": "topic",
+      "type": "string"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    }
+  ]
+}

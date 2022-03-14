@@ -1,0 +1,26 @@
+{
+  "type": "record",
+  "name": "Context",
+  "namespace": "com.bakdata.kafka",
+  "fields": [
+    {
+      "name": "key",
+      "type": "string"
+    },
+    {
+      "name": "offset",
+      "type": "long"
+    },
+    {
+      "name": "partition",
+      "type": "int"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

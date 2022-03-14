@@ -1,0 +1,15 @@
+{
+"type": "record",
+  "name": "ErrorKey",
+  "namespace": "com.bakdata.kafka",
+  "fields": [
+    {
+      "name": "topic",
+      "type": "string"
+    },
+    {
+      "name": "type",
+      "type": "string"
+    }
+  ]
+}
