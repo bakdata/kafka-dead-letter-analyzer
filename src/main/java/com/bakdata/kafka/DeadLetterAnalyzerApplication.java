@@ -26,6 +26,7 @@ package com.bakdata.kafka;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.Properties;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
@@ -35,12 +36,13 @@ import picocli.CommandLine.Option;
 
 @Slf4j
 @ToString(callSuper = true)
+@Setter
 public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication {
 
     private static final String EXAMPLES = "examples";
     private static final String STATS = "stats";
     @Option(names = "--max-size", description = "Maximum size of dead letters to send to output and examples topic")
-    private final int maxSize = Integer.MAX_VALUE;
+    private int maxSize = Integer.MAX_VALUE;
 
     public static void main(final String[] args) {
         KafkaStreamsApplication.startApplication(new DeadLetterAnalyzerApplication(), args);
