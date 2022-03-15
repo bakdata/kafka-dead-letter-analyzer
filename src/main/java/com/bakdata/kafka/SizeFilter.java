@@ -27,6 +27,7 @@ package com.bakdata.kafka;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
@@ -48,7 +49,7 @@ class SizeFilter {
             final JsonEncoder jsonEncoder = EncoderFactory.get().jsonEncoder(schema, out);
             writer.write(specificRecord, jsonEncoder);
             jsonEncoder.flush();
-            return out.toString();
+            return out.toString(StandardCharsets.UTF_8);
         }
     }
 

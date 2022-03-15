@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import org.apache.kafka.common.header.Header;
 
 @FunctionalInterface
-public interface DeadLetterConverter {
+interface DeadLetterConverter {
     static int intValue(final Header header) {
         return stringValue(header)
                 .map(Integer::parseInt)

@@ -34,6 +34,9 @@ import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
 import picocli.CommandLine.Option;
 
+/**
+ * A Kafka Streams application that analyzes dead letters in your Kafka cluster
+ */
 @Slf4j
 @ToString(callSuper = true)
 @Setter
