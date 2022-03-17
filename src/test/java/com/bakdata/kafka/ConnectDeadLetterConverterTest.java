@@ -73,27 +73,30 @@ class ConnectDeadLetterConverterTest {
     static Stream<Arguments> generateMissingRequiredHeaders() {
         return Stream.of(
                 Arguments.of(new RecordHeaders()
-                        .add(ERROR_HEADER_EXECUTING_CLASS, toBytes("org.apache.kafka.connect.json.JsonConverter"))
-                        .add(ERROR_HEADER_TASK_ID, toBytes(2))
-                        .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector")),
+                                .add(ERROR_HEADER_EXECUTING_CLASS, toBytes("org.apache.kafka.connect.json"
+                                        + ".JsonConverter"))
+                                .add(ERROR_HEADER_TASK_ID, toBytes(2))
+                                .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector")),
                         String.format("Missing required header %s", ERROR_HEADER_STAGE)
                 ),
                 Arguments.of(new RecordHeaders()
-                        .add(ERROR_HEADER_STAGE, toBytes("VALUE_CONVERTER"))
-                        .add(ERROR_HEADER_TASK_ID, toBytes(2))
-                        .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector")),
+                                .add(ERROR_HEADER_STAGE, toBytes("VALUE_CONVERTER"))
+                                .add(ERROR_HEADER_TASK_ID, toBytes(2))
+                                .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector")),
                         String.format("Missing required header %s", ERROR_HEADER_EXECUTING_CLASS)
                 ),
                 Arguments.of(new RecordHeaders()
-                        .add(ERROR_HEADER_STAGE, toBytes("VALUE_CONVERTER"))
-                        .add(ERROR_HEADER_EXECUTING_CLASS, toBytes("org.apache.kafka.connect.json.JsonConverter"))
-                        .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector")),
+                                .add(ERROR_HEADER_STAGE, toBytes("VALUE_CONVERTER"))
+                                .add(ERROR_HEADER_EXECUTING_CLASS, toBytes("org.apache.kafka.connect.json"
+                                        + ".JsonConverter"))
+                                .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector")),
                         String.format("Missing required header %s", ERROR_HEADER_TASK_ID)
                 ),
                 Arguments.of(new RecordHeaders()
-                        .add(ERROR_HEADER_STAGE, toBytes("VALUE_CONVERTER"))
-                        .add(ERROR_HEADER_EXECUTING_CLASS, toBytes("org.apache.kafka.connect.json.JsonConverter"))
-                        .add(ERROR_HEADER_TASK_ID, toBytes(2)),
+                                .add(ERROR_HEADER_STAGE, toBytes("VALUE_CONVERTER"))
+                                .add(ERROR_HEADER_EXECUTING_CLASS, toBytes("org.apache.kafka.connect.json"
+                                        + ".JsonConverter"))
+                                .add(ERROR_HEADER_TASK_ID, toBytes(2)),
                         String.format("Missing required header %s", ERROR_HEADER_CONNECTOR_NAME)
                 )
         );
@@ -137,7 +140,7 @@ class ConnectDeadLetterConverterTest {
                 .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector"))
                 .add(ERROR_HEADER_EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(ERROR_HEADER_EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        this.softly.assertThat(new ConnectDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThat(new ConnectDeadLetterConverter().convert("foo", headers))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getInputValue()).hasValue("foo");
                     this.softly.assertThat(deadLetter.getPartition()).hasValue(1);
@@ -157,7 +160,7 @@ class ConnectDeadLetterConverterTest {
     @Test
     void shouldConvertWithMissingHeaders() {
         final Headers headers = generateDefaultHeaders();
-        this.softly.assertThat(new ConnectDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThat(new ConnectDeadLetterConverter().convert("foo", headers))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getPartition()).isNotPresent();
                     this.softly.assertThat(deadLetter.getTopic()).isNotPresent();
@@ -173,14 +176,14 @@ class ConnectDeadLetterConverterTest {
     void shouldConvertWithNullHeaders() {
         final Headers headers = generateDefaultHeaders()
                 .add(ERROR_HEADER_EXCEPTION_MESSAGE, null);
-        this.softly.assertThat(new ConnectDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThat(new ConnectDeadLetterConverter().convert("foo", headers))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
     }
 
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterConverter().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
@@ -188,7 +191,7 @@ class ConnectDeadLetterConverterTest {
     @ParameterizedTest
     @MethodSource("generateNonNullableHeaders")
     void shouldThrowWithNonNullableHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterConverter().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }

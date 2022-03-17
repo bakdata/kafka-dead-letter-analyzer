@@ -27,10 +27,10 @@ package com.bakdata.kafka;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.Headers;
 
 @FunctionalInterface
 interface DeadLetterConverter {
-    String MISSING_REQUIRED_HEADER = "Missing required header %s";
 
     /**
      * Get the value of the header as an {@code int}
@@ -69,15 +69,43 @@ interface DeadLetterConverter {
     }
 
     /**
+     * Retrieve a header from headers
+     *
+     * @param headers headers to retrieve header from
+     * @param key key of header to retrieve
+     * @return optional header
+     */
+    static Optional<Header> getHeader(final Headers headers, final String key) {
+        return Optional.ofNullable(headers.lastHeader(key));
+    }
+
+    /**
+     * Create a supplier of an {@link IllegalArgumentException} stating that a required header is missing
+     *
+     * @param header Message template used as the message of the exception
+     * @return Supplier of an {@link IllegalArgumentException}
+     */
+    static Supplier<IllegalArgumentException> missingRequiredHeader(final String header) {
+        return illegalArgument("Missing required header %s", header);
+    }
+
+    /**
      * Create a supplier of an {@link IllegalArgumentException}
      *
      * @param message Message template used as the message of the exception
      * @param args Parameters passed to {@code message} using {@link String#format(String, Object...)}
      * @return Supplier of an {@link IllegalArgumentException} with formatted message
      */
-    static Supplier<IllegalArgumentException> illegalArgument(final String message, final Object... args) {
+    private static Supplier<IllegalArgumentException> illegalArgument(final String message, final Object... args) {
         return () -> new IllegalArgumentException(String.format(message, args));
     }
 
-    DeadLetter convert(Object value);
+    /**
+     * Create a {@link DeadLetter} from any value and associated headers.
+     *
+     * @param value value to create dead letter from
+     * @param headers headers to retrieve meta information such as topic, partition, and offset from.
+     * @return {@link DeadLetter} object representing error
+     */
+    DeadLetter convert(Object value, Headers headers);
 }

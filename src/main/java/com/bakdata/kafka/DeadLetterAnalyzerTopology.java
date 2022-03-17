@@ -33,13 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import org.apache.avro.specific.SpecificRecord;
-import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -137,12 +135,12 @@ class DeadLetterAnalyzerTopology {
         final KStream<Object, Object> rawStreamHeaderDeadLetters = rawDeadLetters
                 .flatTransformValues(() -> new HeaderFilter(EXCEPTION_CLASS_NAME));
         final KStream<Object, DeadLetter> streamHeaderDeadLetters =
-                this.streamHeaderDeadLetters(rawStreamHeaderDeadLetters, StreamsDeadLetterConverter::new);
+                this.streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterConverter());
 
         final KStream<Object, Object> rawConnectDeadLetters = rawDeadLetters
                 .flatTransformValues(() -> new HeaderFilter(ERROR_HEADER_CONNECTOR_NAME));
         final KStream<Object, DeadLetter> connectDeadLetters =
-                this.streamHeaderDeadLetters(rawConnectDeadLetters, ConnectDeadLetterConverter::new);
+                this.streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterConverter());
 
         return streamDeadLetters.merge(connectDeadLetters)
                 .merge(streamHeaderDeadLetters);
@@ -213,7 +211,7 @@ class DeadLetterAnalyzerTopology {
     }
 
     private <K> KStream<K, DeadLetter> streamHeaderDeadLetters(final KStream<K, Object> input,
-            final Function<Headers, DeadLetterConverter> converterFactory) {
+            final DeadLetterConverter converterFactory) {
         final KStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.transformValues(
                 ErrorCapturingValueTransformer.captureErrors(
                         () -> new DeadLetterConverterTransformer(converterFactory)));

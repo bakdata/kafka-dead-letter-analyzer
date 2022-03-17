@@ -33,7 +33,6 @@ import static com.bakdata.kafka.ErrorHeaderTransformer.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
 
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -152,7 +151,7 @@ class StreamsDeadLetterConverterTest {
                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        this.softly.assertThat(new StreamsDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getInputValue()).hasValue("foo");
                     this.softly.assertThat(deadLetter.getPartition()).hasValue(1);
@@ -170,7 +169,7 @@ class StreamsDeadLetterConverterTest {
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterConverter().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
@@ -178,7 +177,7 @@ class StreamsDeadLetterConverterTest {
     @ParameterizedTest
     @MethodSource("generateNonNullableHeaders")
     void shouldThrowWithNonNullableHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterConverter(headers).convert("foo"))
+        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterConverter().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }

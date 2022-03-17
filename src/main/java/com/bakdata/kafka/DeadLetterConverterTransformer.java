@@ -24,16 +24,14 @@
 
 package com.bakdata.kafka;
 
-import java.util.function.Function;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.streams.kstream.ValueTransformer;
 import org.apache.kafka.streams.processor.ProcessorContext;
 
 @RequiredArgsConstructor
 class DeadLetterConverterTransformer implements ValueTransformer<Object, DeadLetter> {
-    private final @NonNull Function<Headers, DeadLetterConverter> factory;
+    private final @NonNull DeadLetterConverter converter;
     private ProcessorContext context;
 
     @Override
@@ -43,8 +41,7 @@ class DeadLetterConverterTransformer implements ValueTransformer<Object, DeadLet
 
     @Override
     public DeadLetter transform(final Object o) {
-        final DeadLetterConverter converter = this.factory.apply(this.context.headers());
-        return converter.convert(o);
+        return converter.convert(o, this.context.headers());
     }
 
     @Override

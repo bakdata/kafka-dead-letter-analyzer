@@ -24,7 +24,8 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.DeadLetterConverter.illegalArgument;
+import static com.bakdata.kafka.DeadLetterConverter.getHeader;
+import static com.bakdata.kafka.DeadLetterConverter.missingRequiredHeader;
 import static com.bakdata.kafka.ErrorHeaderTransformer.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_MESSAGE;
@@ -34,38 +35,35 @@ import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
 
 import java.util.Optional;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 
 @RequiredArgsConstructor
 class StreamsDeadLetterConverter implements DeadLetterConverter {
-    private final @NonNull Headers headers;
 
     @Override
-    public DeadLetter convert(final Object value) {
-        final Integer partition = this.getHeader(PARTITION)
+    public DeadLetter convert(final Object value, final Headers headers) {
+        final Integer partition = getHeader(headers, PARTITION)
                 .map(DeadLetterConverter::intValue)
-                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, PARTITION));
-        final String topic = this.getHeader(TOPIC)
+                .orElseThrow(missingRequiredHeader(PARTITION));
+        final String topic = getHeader(headers, TOPIC)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, TOPIC));
-        final Long offset = this.getHeader(OFFSET)
+                .orElseThrow(missingRequiredHeader(TOPIC));
+        final Long offset = getHeader(headers, OFFSET)
                 .map(DeadLetterConverter::longValue)
-                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, OFFSET));
-        final String description = this.getHeader(DESCRIPTION)
+                .orElseThrow(missingRequiredHeader(OFFSET));
+        final String description = getHeader(headers, DESCRIPTION)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, DESCRIPTION));
-        final String errorClass = this.getHeader(EXCEPTION_CLASS_NAME)
+                .orElseThrow(missingRequiredHeader(DESCRIPTION));
+        final String errorClass = getHeader(headers, EXCEPTION_CLASS_NAME)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, EXCEPTION_CLASS_NAME));
-        final String message = this.getHeader(EXCEPTION_MESSAGE)
+                .orElseThrow(missingRequiredHeader(EXCEPTION_CLASS_NAME));
+        final String message = getHeader(headers, EXCEPTION_MESSAGE)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, EXCEPTION_MESSAGE));
-        final String stackTrace = this.getHeader(EXCEPTION_STACK_TRACE)
+                .orElseThrow(missingRequiredHeader(EXCEPTION_MESSAGE));
+        final String stackTrace = getHeader(headers, EXCEPTION_STACK_TRACE)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, EXCEPTION_STACK_TRACE));
+                .orElseThrow(missingRequiredHeader(EXCEPTION_STACK_TRACE));
         return DeadLetter.newBuilder()
                 .setPartition(partition)
                 .setTopic(topic)
@@ -78,9 +76,5 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
                         .setStackTrace(stackTrace)
                         .build())
                 .build();
-    }
-
-    private Optional<Header> getHeader(final String key) {
-        return Optional.ofNullable(this.headers.lastHeader(key));
     }
 }
