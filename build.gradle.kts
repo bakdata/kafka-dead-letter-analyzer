@@ -24,7 +24,6 @@ allprojects {
 
     repositories {
         mavenCentral()
-        maven(url = "https://oss.sonatype.org/content/repositories/snapshots")
         maven(url = "https://packages.confluent.io/maven/")
     }
 }
@@ -58,7 +57,7 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
     implementation(group = "com.bakdata.kafka", name = "streams-bootstrap", version = "2.1.0")
-    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.0.0-SNAPSHOT")
+    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.0.0")
     implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.1.5")
     implementation(group = "org.jooq", name = "jool", version = "0.9.14")
     implementation(group = "info.picocli", name = "picocli", version = "4.6.1")
