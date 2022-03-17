@@ -24,8 +24,8 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.DeadLetterConverter.getHeader;
-import static com.bakdata.kafka.DeadLetterConverter.missingRequiredHeader;
+import static com.bakdata.kafka.HeaderHelper.getHeader;
+import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
 import static com.bakdata.kafka.ErrorHeaderTransformer.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_MESSAGE;
@@ -44,25 +44,25 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
     @Override
     public DeadLetter convert(final Object value, final Headers headers) {
         final Integer partition = getHeader(headers, PARTITION)
-                .map(DeadLetterConverter::intValue)
+                .map(HeaderHelper::intValue)
                 .orElseThrow(missingRequiredHeader(PARTITION));
         final String topic = getHeader(headers, TOPIC)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(TOPIC));
         final Long offset = getHeader(headers, OFFSET)
-                .map(DeadLetterConverter::longValue)
+                .map(HeaderHelper::longValue)
                 .orElseThrow(missingRequiredHeader(OFFSET));
         final String description = getHeader(headers, DESCRIPTION)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(DESCRIPTION));
         final String errorClass = getHeader(headers, EXCEPTION_CLASS_NAME)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(EXCEPTION_CLASS_NAME));
         final String message = getHeader(headers, EXCEPTION_MESSAGE)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(EXCEPTION_MESSAGE));
         final String stackTrace = getHeader(headers, EXCEPTION_STACK_TRACE)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(EXCEPTION_STACK_TRACE));
         return DeadLetter.newBuilder()
                 .setPartition(partition)

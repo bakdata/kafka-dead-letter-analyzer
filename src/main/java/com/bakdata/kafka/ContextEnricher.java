@@ -39,20 +39,20 @@ class ContextEnricher implements ValueTransformerWithKey<Object, DeadLetter, Key
     }
 
     @Override
-    public void init(final ProcessorContext processorContext) {
-        this.context = processorContext;
+    public void init(final ProcessorContext context) {
+        this.context = context;
     }
 
     @Override
     public KeyedDeadLetterWithContext transform(final Object key, final DeadLetter deadLetter) {
-        final Context context = Context.newBuilder()
+        final Context deadLetterContext = Context.newBuilder()
                 .setKey(ErrorUtil.toString(key))
                 .setOffset(this.context.offset())
                 .setPartition(this.context.partition())
                 .setTimestamp(Instant.ofEpochMilli(this.context.timestamp()))
                 .build();
         final DeadLetterWithContext deadLetterWithContext = DeadLetterWithContext.newBuilder()
-                .setContext(context)
+                .setContext(deadLetterContext)
                 .setDeadLetter(deadLetter)
                 .build();
         final ErrorKey errorKey = ErrorKey.newBuilder()

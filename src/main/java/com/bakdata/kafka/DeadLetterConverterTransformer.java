@@ -35,13 +35,13 @@ class DeadLetterConverterTransformer implements ValueTransformer<Object, DeadLet
     private ProcessorContext context;
 
     @Override
-    public void init(final ProcessorContext processorContext) {
-        this.context = processorContext;
+    public void init(final ProcessorContext context) {
+        this.context = context;
     }
 
     @Override
     public DeadLetter transform(final Object o) {
-        return converter.convert(o, this.context.headers());
+        return this.converter.convert(o, this.context.headers());
     }
 
     @Override

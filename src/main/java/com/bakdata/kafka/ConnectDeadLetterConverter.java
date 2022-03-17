@@ -24,8 +24,8 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.DeadLetterConverter.getHeader;
-import static com.bakdata.kafka.DeadLetterConverter.missingRequiredHeader;
+import static com.bakdata.kafka.HeaderHelper.getHeader;
+import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION_MESSAGE;
@@ -47,29 +47,29 @@ class ConnectDeadLetterConverter implements DeadLetterConverter {
     @Override
     public DeadLetter convert(final Object value, final Headers headers) {
         final Optional<Integer> partition = getHeader(headers, ERROR_HEADER_ORIG_PARTITION)
-                .map(DeadLetterConverter::intValue);
+                .map(HeaderHelper::intValue);
         final Optional<String> topic = getHeader(headers, ERROR_HEADER_ORIG_TOPIC)
-                .flatMap(DeadLetterConverter::stringValue);
+                .flatMap(HeaderHelper::stringValue);
         final Optional<Long> offset = getHeader(headers, ERROR_HEADER_ORIG_OFFSET)
-                .map(DeadLetterConverter::longValue);
+                .map(HeaderHelper::longValue);
         final String stage = getHeader(headers, ERROR_HEADER_STAGE)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(ERROR_HEADER_STAGE));
         final String clazz = getHeader(headers, ERROR_HEADER_EXECUTING_CLASS)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(ERROR_HEADER_EXECUTING_CLASS));
         final Optional<String> errorClass = getHeader(headers, ERROR_HEADER_EXCEPTION)
-                .flatMap(DeadLetterConverter::stringValue);
+                .flatMap(HeaderHelper::stringValue);
         final int taskId = getHeader(headers, ERROR_HEADER_TASK_ID)
-                .map(DeadLetterConverter::intValue)
+                .map(HeaderHelper::intValue)
                 .orElseThrow(missingRequiredHeader(ERROR_HEADER_TASK_ID));
         final String connectorName = getHeader(headers, ERROR_HEADER_CONNECTOR_NAME)
-                .flatMap(DeadLetterConverter::stringValue)
+                .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(ERROR_HEADER_CONNECTOR_NAME));
         final Optional<String> message = getHeader(headers, ERROR_HEADER_EXCEPTION_MESSAGE)
-                .flatMap(DeadLetterConverter::stringValue);
+                .flatMap(HeaderHelper::stringValue);
         final Optional<String> stackTrace = getHeader(headers, ERROR_HEADER_EXCEPTION_STACK_TRACE)
-                .flatMap(DeadLetterConverter::stringValue);
+                .flatMap(HeaderHelper::stringValue);
         return DeadLetter.newBuilder()
                 .setPartition(partition.orElse(null))
                 .setTopic(topic.orElse(null))
