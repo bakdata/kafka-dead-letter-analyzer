@@ -512,8 +512,7 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     private void startApp() {
-        final int maxSize = Integer.MAX_VALUE;
-        this.startApp(maxSize);
+        this.startApp(Integer.MAX_VALUE);
     }
 
     private void startApp(final int maxSize) {

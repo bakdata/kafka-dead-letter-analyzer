@@ -56,18 +56,18 @@ class ConnectDeadLetterConverter implements DeadLetterConverter {
                 .map(DeadLetterConverter::longValue);
         final String stage = this.getHeader(ERROR_HEADER_STAGE)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", ERROR_HEADER_STAGE));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, ERROR_HEADER_STAGE));
         final String clazz = this.getHeader(ERROR_HEADER_EXECUTING_CLASS)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", ERROR_HEADER_EXECUTING_CLASS));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, ERROR_HEADER_EXECUTING_CLASS));
         final Optional<String> errorClass = this.getHeader(ERROR_HEADER_EXCEPTION)
                 .flatMap(DeadLetterConverter::stringValue);
         final int taskId = this.getHeader(ERROR_HEADER_TASK_ID)
                 .map(DeadLetterConverter::intValue)
-                .orElseThrow(illegalArgument("Missing required header %s", ERROR_HEADER_TASK_ID));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, ERROR_HEADER_TASK_ID));
         final String connectorName = this.getHeader(ERROR_HEADER_CONNECTOR_NAME)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", ERROR_HEADER_CONNECTOR_NAME));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, ERROR_HEADER_CONNECTOR_NAME));
         final Optional<String> message = this.getHeader(ERROR_HEADER_EXCEPTION_MESSAGE)
                 .flatMap(DeadLetterConverter::stringValue);
         final Optional<String> stackTrace = this.getHeader(ERROR_HEADER_EXCEPTION_STACK_TRACE)

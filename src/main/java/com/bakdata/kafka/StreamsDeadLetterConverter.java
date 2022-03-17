@@ -47,25 +47,25 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
     public DeadLetter convert(final Object value) {
         final Integer partition = this.getHeader(PARTITION)
                 .map(DeadLetterConverter::intValue)
-                .orElseThrow(illegalArgument("Missing required header %s", PARTITION));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, PARTITION));
         final String topic = this.getHeader(TOPIC)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", TOPIC));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, TOPIC));
         final Long offset = this.getHeader(OFFSET)
                 .map(DeadLetterConverter::longValue)
-                .orElseThrow(illegalArgument("Missing required header %s", OFFSET));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, OFFSET));
         final String description = this.getHeader(DESCRIPTION)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", DESCRIPTION));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, DESCRIPTION));
         final String errorClass = this.getHeader(EXCEPTION_CLASS_NAME)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", EXCEPTION_CLASS_NAME));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, EXCEPTION_CLASS_NAME));
         final String message = this.getHeader(EXCEPTION_MESSAGE)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", EXCEPTION_MESSAGE));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, EXCEPTION_MESSAGE));
         final String stackTrace = this.getHeader(EXCEPTION_STACK_TRACE)
                 .flatMap(DeadLetterConverter::stringValue)
-                .orElseThrow(illegalArgument("Missing required header %s", EXCEPTION_STACK_TRACE));
+                .orElseThrow(illegalArgument(MISSING_REQUIRED_HEADER, EXCEPTION_STACK_TRACE));
         return DeadLetter.newBuilder()
                 .setPartition(partition)
                 .setTopic(topic)

@@ -39,8 +39,8 @@ class ContextEnricher implements ValueTransformerWithKey<Object, DeadLetter, Key
     }
 
     @Override
-    public void init(final ProcessorContext context) {
-        this.context = context;
+    public void init(final ProcessorContext processorContext) {
+        this.context = processorContext;
     }
 
     @Override

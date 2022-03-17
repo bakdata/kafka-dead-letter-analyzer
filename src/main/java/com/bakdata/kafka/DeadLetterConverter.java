@@ -30,26 +30,53 @@ import org.apache.kafka.common.header.Header;
 
 @FunctionalInterface
 interface DeadLetterConverter {
+    String MISSING_REQUIRED_HEADER = "Missing required header %s";
+
+    /**
+     * Get the value of the header as an {@code int}
+     *
+     * @param header header
+     * @return {@code int} value of header
+     */
     static int intValue(final Header header) {
         return stringValue(header)
                 .map(Integer::parseInt)
                 .orElseThrow(illegalArgument("Cannot parse int from null"));
     }
 
+    /**
+     * Get the value of the header as a {@code long}
+     *
+     * @param header header
+     * @return {@code long} value of header
+     */
     static long longValue(final Header header) {
         return stringValue(header)
                 .map(Long::parseLong)
                 .orElseThrow(illegalArgument("Cannot parse long from null"));
     }
 
-    static Supplier<IllegalArgumentException> illegalArgument(final String message, final Object... args) {
-        return () -> new IllegalArgumentException(String.format(message, args));
-    }
-
+    /**
+     * Get the optional value of the header as a {@link String}
+     *
+     * @param header header
+     * @return Optional {@link String} value of header
+     */
     static Optional<String> stringValue(final Header header) {
         final byte[] value = header.value();
         return Optional.ofNullable(value)
                 .map(String::new);
+    }
+
+    /**
+     * Create a supplier of an {@link IllegalArgumentException}
+     *
+     * @param message Message template used as the message of the exception
+     * @param args Parameters passed to {@code message} using {@link String#format(String, Object...)}
+     * @return Supplier of an {@link IllegalArgumentException} with formatted message
+     */
+    static Supplier<IllegalArgumentException> illegalArgument(final String message, final Object... args) {
+        return () -> new IllegalArgumentException(String.format(message, args));
     }
 
     DeadLetter convert(Object value);
