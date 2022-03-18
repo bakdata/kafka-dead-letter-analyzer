@@ -1,0 +1,43 @@
+{
+  "type": "record",
+  "name": "FullDeadLetterWithContext",
+  "namespace": "com.bakdata.kafka",
+  "doc": "Dead letter with its context. Record is intended for storage in a sink data system.",
+  "fields": [
+    {
+      "name": "key",
+      "type": "string",
+      "doc": "Key of the message"
+    },
+    {
+      "name": "offset",
+      "type": "long",
+      "doc": "Offset in the partition the message was read from"
+    },
+    {
+      "name": "partition",
+      "type": "int",
+      "doc": "Partition of the topic the message was read from"
+    },
+    {
+      "name": "timestamp",
+      "type": "string",
+      "doc": "Timestamp of the message in yyyy-MM-ddTHH:mm:ss.SSS format"
+    },
+    {
+      "name": "dead_letter",
+      "type": "DeadLetter",
+      "doc": "Dead letter representing an error that has occurred when processing data"
+    },
+    {
+      "name": "topic",
+      "type": "string",
+      "doc": "The topic the error occurred in"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "doc": "The type of the error that has occurred"
+    }
+  ]
+}

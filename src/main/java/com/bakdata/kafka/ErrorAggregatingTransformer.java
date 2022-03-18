@@ -37,34 +37,34 @@ import org.jooq.lambda.Seq;
 class ErrorAggregatingTransformer
         implements ValueTransformerWithKey<ErrorKey, DeadLetterWithContext, Result> {
     private final @NonNull String storeName;
-    private KeyValueStore<ErrorKey, ErrorMetadata> metadataStore;
+    private KeyValueStore<ErrorKey, ErrorStatistics> statisticsStore;
 
-    private static Result updatedResult(final ErrorMetadata oldMetadata, final ErrorMetadata newMetadata) {
-        final ErrorMetadata updatedMetadata = merge(oldMetadata, newMetadata);
+    private static Result updatedResult(final ErrorStatistics oldStatistics, final ErrorStatistics newStatistics) {
+        final ErrorStatistics updatedStatistics = merge(oldStatistics, newStatistics);
         return Result.builder()
-                .metadata(updatedMetadata)
+                .statistics(updatedStatistics)
                 .build();
     }
 
-    private static ErrorMetadata merge(final ErrorMetadata oldMetadata, final ErrorMetadata newMetadata) {
-        return ErrorMetadata.newBuilder(oldMetadata)
-                .setCount(oldMetadata.getCount() + newMetadata.getCount())
-                .setCreated(Seq.of(oldMetadata.getCreated(), newMetadata.getCreated()).min().orElseThrow())
-                .setUpdated(Seq.of(oldMetadata.getUpdated(), newMetadata.getUpdated()).max().orElseThrow())
+    private static ErrorStatistics merge(final ErrorStatistics oldStatistics, final ErrorStatistics newStatistics) {
+        return ErrorStatistics.newBuilder(oldStatistics)
+                .setCount(oldStatistics.getCount() + newStatistics.getCount())
+                .setCreated(Seq.of(oldStatistics.getCreated(), newStatistics.getCreated()).min().orElseThrow())
+                .setUpdated(Seq.of(oldStatistics.getUpdated(), newStatistics.getUpdated()).max().orElseThrow())
                 .build();
     }
 
     private static Result newResult(final DeadLetterWithContext deadLetterWithContext,
-            final ErrorMetadata newMetadata) {
+            final ErrorStatistics newStatistics) {
         return Result.builder()
                 .example(deadLetterWithContext)
-                .metadata(newMetadata)
+                .statistics(newStatistics)
                 .build();
     }
 
-    private static ErrorMetadata newMetadata(final DeadLetterWithContext deadLetterWithContext) {
+    private static ErrorStatistics newStatistics(final DeadLetterWithContext deadLetterWithContext) {
         final Instant timestamp = deadLetterWithContext.getContext().getTimestamp();
-        return ErrorMetadata.newBuilder()
+        return ErrorStatistics.newBuilder()
                 .setCount(1)
                 .setCreated(timestamp)
                 .setUpdated(timestamp)
@@ -73,16 +73,16 @@ class ErrorAggregatingTransformer
 
     @Override
     public void init(final ProcessorContext context) {
-        this.metadataStore = context.getStateStore(this.storeName);
+        this.statisticsStore = context.getStateStore(this.storeName);
     }
 
     @Override
     public Result transform(final ErrorKey key, final DeadLetterWithContext deadLetterWithContext) {
-        final ErrorMetadata newMetadata = newMetadata(deadLetterWithContext);
-        final Result result = this.getMetadata(key)
-                .map(oldMetadata -> updatedResult(oldMetadata, newMetadata))
-                .orElseGet(() -> newResult(deadLetterWithContext, newMetadata));
-        this.metadataStore.put(key, result.getMetadata());
+        final ErrorStatistics newStatistics = newStatistics(deadLetterWithContext);
+        final Result result = this.getStatistics(key)
+                .map(oldStatistics -> updatedResult(oldStatistics, newStatistics))
+                .orElseGet(() -> newResult(deadLetterWithContext, newStatistics));
+        this.statisticsStore.put(key, result.getStatistics());
         return result;
     }
 
@@ -91,7 +91,7 @@ class ErrorAggregatingTransformer
         //do nothing
     }
 
-    private Optional<ErrorMetadata> getMetadata(final ErrorKey key) {
-        return Optional.ofNullable(this.metadataStore.get(key));
+    private Optional<ErrorStatistics> getStatistics(final ErrorKey key) {
+        return Optional.ofNullable(this.statisticsStore.get(key));
     }
 }

@@ -91,14 +91,136 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     @Test
-    void shouldAggregate() {
+    void shouldProcessDeadLetter() {
         this.startApp();
-        final TestInput<String, SpecificRecord> input = this.getInput(Serdes.String());
-        final TestOutput<String, FormattedDeadLetterWithFullContext> processedDeadLetters =
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
-        final TestOutput<String, FullErrorMetadata> metadata = this.getMetadata();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
         final TestOutput<String, ErrorExample> examples = this.getExamples();
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
+
+        final DeadLetter deadLetter = DeadLetter.newBuilder()
+                .setInputValue("foo")
+                .setCause(ErrorDescription.newBuilder()
+                        .setMessage("message")
+                        .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
+                        .build())
+                .setDescription("description")
+                .build();
+        final long timestamp = 0L;
+        input.add("key", deadLetter, timestamp);
+        this.softly.assertThat(seq(processedDeadLetters).toList())
+                .hasSize(1)
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
+                    final FullDeadLetterWithContext value = record.value();
+                    this.softly.assertThat(value.getKey()).isEqualTo("key");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
+                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    this.softly.assertThat(value.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getOffset()).isEqualTo(0L);
+                    this.softly.assertThat(value.getDeadLetter()).isEqualTo(deadLetter);
+                    this.softly.assertThat(parseDateTime(value.getTimestamp()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(timestamp)));
+                });
+        this.softly.assertThat(seq(statistics).toList())
+                .hasSize(1)
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
+                            .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    final FullErrorStatistics value = record.value();
+                    this.softly.assertThat(value.getCount()).isEqualTo(1);
+                    this.softly.assertThat(parseDateTime(value.getCreated()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(timestamp)));
+                    this.softly.assertThat(parseDateTime(value.getUpdated()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(timestamp)));
+                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
+                });
+        this.softly.assertThat(seq(examples).toList())
+                .hasSize(1)
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
+                            .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    final ErrorExample value = record.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
+                    this.softly.assertThat(example.getDeadLetter()).isEqualTo(deadLetter);
+                    this.softly.assertThat(example.getKey()).isEqualTo("key");
+                    this.softly.assertThat(example.getOffset()).isEqualTo(0L);
+                    this.softly.assertThat(example.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
+                    this.softly.assertThat(parseDateTime(example.getTimestamp()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(timestamp)));
+                });
+        this.assumeNoDeadLetters();
+    }
+
+    @Test
+    void shouldAggregateStatistics() {
+        this.startApp();
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
+
+        final DeadLetter firstDeadLetter = DeadLetter.newBuilder()
+                .setInputValue("foo")
+                .setCause(ErrorDescription.newBuilder()
+                        .setMessage("message")
+                        .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
+                        .build())
+                .setDescription("description")
+                .build();
+        final long firstTimestamp = 0L;
+        input.add("key", firstDeadLetter, firstTimestamp);
+        this.softly.assertThat(seq(statistics).toList())
+                .hasSize(1)
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
+                            .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    final FullErrorStatistics value = record.value();
+                    this.softly.assertThat(value.getCount()).isEqualTo(1);
+                    this.softly.assertThat(parseDateTime(value.getCreated()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
+                    this.softly.assertThat(parseDateTime(value.getUpdated()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
+                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
+                });
+
+        final DeadLetter secondDeadLetter = DeadLetter.newBuilder()
+                .setInputValue("foo")
+                .setCause(ErrorDescription.newBuilder()
+                        .setMessage("message")
+                        .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
+                        .build())
+                .setDescription("description")
+                .build();
+        final long secondTimestamp = 10L;
+        input.add("key", secondDeadLetter, secondTimestamp);
+        this.softly.assertThat(seq(statistics).toList())
+                .hasSize(1)
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
+                            .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    final FullErrorStatistics value = record.value();
+                    this.softly.assertThat(value.getCount()).isEqualTo(2);
+                    this.softly.assertThat(parseDateTime(value.getCreated()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
+                    this.softly.assertThat(parseDateTime(value.getUpdated()))
+                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(secondTimestamp)));
+                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
+                });
+        this.assumeNoDeadLetters();
+    }
+
+    @Test
+    void shouldOnlyForwardFirstExample() {
+        this.startApp();
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
+                this.getProcessedDeadLetters();
+        final TestOutput<String, ErrorExample> examples = this.getExamples();
 
         final DeadLetter firstDeadLetter = DeadLetter.newBuilder()
                 .setInputValue("foo")
@@ -112,9 +234,9 @@ class DeadLetterAnalyzerTopologyTest {
         input.add("key", firstDeadLetter, firstTimestamp);
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
-                    final FormattedDeadLetterWithFullContext value = r.value();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
+                    final FullDeadLetterWithContext value = record.value();
                     this.softly.assertThat(value.getKey()).isEqualTo("key");
                     this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
                     this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
@@ -124,27 +246,13 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(parseDateTime(value.getTimestamp()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
                 });
-        this.softly.assertThat(seq(metadata).toList())
-                .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
-                            .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final FullErrorMetadata value = r.value();
-                    this.softly.assertThat(value.getCount()).isEqualTo(1);
-                    this.softly.assertThat(parseDateTime(value.getCreated()))
-                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
-                    this.softly.assertThat(parseDateTime(value.getUpdated()))
-                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
-                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
-                });
         this.softly.assertThat(seq(examples).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
                             .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final ErrorExample value = r.value();
-                    final FormattedDeadLetterWithContext example = value.getExample();
+                    final ErrorExample value = record.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
                     this.softly.assertThat(example.getDeadLetter()).isEqualTo(firstDeadLetter);
                     this.softly.assertThat(example.getKey()).isEqualTo("key");
                     this.softly.assertThat(example.getOffset()).isEqualTo(0L);
@@ -167,9 +275,9 @@ class DeadLetterAnalyzerTopologyTest {
         input.add("key", secondDeadLetter, secondTimestamp);
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).isEqualTo("my-stream-dead-letter-topic+0+1");
-                    final FormattedDeadLetterWithFullContext value = r.value();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).isEqualTo("my-stream-dead-letter-topic+0+1");
+                    final FullDeadLetterWithContext value = record.value();
                     this.softly.assertThat(value.getKey()).isEqualTo("key");
                     this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
                     this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
@@ -179,33 +287,18 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(parseDateTime(value.getTimestamp()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(secondTimestamp)));
                 });
-        this.softly.assertThat(seq(metadata).toList())
-                .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
-                            .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final FullErrorMetadata value = r.value();
-                    this.softly.assertThat(value.getCount()).isEqualTo(2);
-                    this.softly.assertThat(parseDateTime(value.getCreated()))
-                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
-                    this.softly.assertThat(parseDateTime(value.getUpdated()))
-                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(secondTimestamp)));
-                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
-                });
         this.softly.assertThat(seq(examples).toList()).isEmpty();
-        this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
+        this.assumeNoDeadLetters();
     }
 
     @Test
     void shouldFilterMaxSize() {
         this.startApp(0);
-        final TestInput<String, SpecificRecord> input = this.getInput(Serdes.String());
-        final TestOutput<String, FormattedDeadLetterWithFullContext> processedDeadLetters =
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
-        final TestOutput<String, FullErrorMetadata> metadata = this.getMetadata();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
         final TestOutput<String, ErrorExample> examples = this.getExamples();
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
 
         final DeadLetter firstDeadLetter = DeadLetter.newBuilder()
                 .setInputValue("foo")
@@ -218,12 +311,12 @@ class DeadLetterAnalyzerTopologyTest {
         final long firstTimestamp = 0L;
         input.add("key", firstDeadLetter, firstTimestamp);
         this.softly.assertThat(seq(processedDeadLetters).toList()).isEmpty();
-        this.softly.assertThat(seq(metadata).toList())
+        this.softly.assertThat(seq(statistics).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
                             .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final FullErrorMetadata value = r.value();
+                    final FullErrorStatistics value = record.value();
                     this.softly.assertThat(value.getCount()).isEqualTo(1);
                     this.softly.assertThat(parseDateTime(value.getCreated()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
@@ -233,13 +326,14 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
                 });
         this.softly.assertThat(seq(examples).toList()).isEmpty();
+        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
         this.softly.assertThat(deadLetters).isEmpty();
     }
 
     @Test
     void shouldProduceDeadLetterAndAnalyze() {
         this.startApp();
-        final TestInput<String, SpecificRecord> input = this.getInput(Serdes.String());
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
         final DeadLetter deadLetter = DeadLetter.newBuilder()
                 .setInputValue("foo")
                 .setCause(ErrorDescription.newBuilder()
@@ -250,18 +344,18 @@ class DeadLetterAnalyzerTopologyTest {
                 .setDescription("description")
                 .build();
 
-        final TestOutput<String, FormattedDeadLetterWithFullContext> processedDeadLetters =
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
-        final TestOutput<String, FullErrorMetadata> metadata = this.getMetadata();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
         final TestOutput<String, ErrorExample> examples = this.getExamples();
         final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
 
         input.add("key", deadLetter);
         this.softly.assertThat(seq(deadLetters).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).isEqualTo("key");
-                    final DeadLetter value = r.value();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).isEqualTo("key");
+                    final DeadLetter value = record.value();
                     this.softly.assertThat(value.getDescription()).isEqualTo("Error analyzing dead letter");
                     this.softly.assertThat(value.getTopic()).hasValue("my-stream-dead-letter-topic");
                     this.softly.assertThat(value.getPartition()).hasValue(0);
@@ -269,30 +363,30 @@ class DeadLetterAnalyzerTopologyTest {
                 });
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
+                .anySatisfy(record -> {
                     //offset used by internal dead letter is 1. Maybe it has to do with exactly once guarantees
-                    this.softly.assertThat(r.key()).isEqualTo("analyzer-stream-dead-letter-topic+0+1");
-                    final FormattedDeadLetterWithFullContext value = r.value();
+                    this.softly.assertThat(record.key()).isEqualTo("analyzer-stream-dead-letter-topic+0+1");
+                    final FullDeadLetterWithContext value = record.value();
                     this.softly.assertThat(value.getKey()).isEqualTo("key");
                     this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
                     this.softly.assertThat(value.getPartition()).isEqualTo(0);
                     this.softly.assertThat(value.getOffset()).isEqualTo(1L);
                 });
-        this.softly.assertThat(seq(metadata).toList())
+        this.softly.assertThat(seq(statistics).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).startsWith("analyzer-stream-dead-letter-topic:");
-                    final FullErrorMetadata value = r.value();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final FullErrorStatistics value = record.value();
                     this.softly.assertThat(value.getCount()).isEqualTo(1);
                     this.softly.assertThat(value.getType()).isNotEmpty();
                     this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
                 });
         this.softly.assertThat(seq(examples).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).startsWith("analyzer-stream-dead-letter-topic:");
-                    final ErrorExample value = r.value();
-                    final FormattedDeadLetterWithContext example = value.getExample();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final ErrorExample value = record.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
                     this.softly.assertThat(example.getKey()).isEqualTo("key");
                     this.softly.assertThat(example.getOffset()).isEqualTo(1L);
                     this.softly.assertThat(example.getPartition()).isEqualTo(0);
@@ -305,11 +399,10 @@ class DeadLetterAnalyzerTopologyTest {
     void shouldProcessConnectErrors() {
         this.startApp();
         final TestInput<String, SpecificRecord> input = this.getConnectInput(Serdes.String());
-        final TestOutput<String, FormattedDeadLetterWithFullContext> processedDeadLetters =
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
-        final TestOutput<String, FullErrorMetadata> metadata = this.getMetadata();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
         final TestOutput<String, ErrorExample> examples = this.getExamples();
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
 
         final long firstTimestamp = 0L;
         final Headers headers = new RecordHeaders()
@@ -323,9 +416,8 @@ class DeadLetterAnalyzerTopologyTest {
                 .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector"))
                 .add(ERROR_HEADER_EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(ERROR_HEADER_EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        final TestRecord record = TestRecord.newBuilder().setId(0).build();
-        input
-                .add("key", record, 0L, headers);
+        final TestRecord testRecord = TestRecord.newBuilder().setId(0).build();
+        input.add("key", testRecord, 0L, headers);
 
         final DeadLetter expectedDeadLetter = DeadLetter.newBuilder()
                 .setInputValue("{\"id\":0}")
@@ -342,9 +434,9 @@ class DeadLetterAnalyzerTopologyTest {
                 .build();
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).isEqualTo("my-connect-dead-letter-topic+0+0");
-                    final FormattedDeadLetterWithFullContext value = r.value();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).isEqualTo("my-connect-dead-letter-topic+0+0");
+                    final FullDeadLetterWithContext value = record.value();
                     this.softly.assertThat(value.getKey()).isEqualTo("key");
                     this.softly.assertThat(value.getTopic()).isEqualTo("my-connect-dead-letter-topic");
                     this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
@@ -354,12 +446,12 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(parseDateTime(value.getTimestamp()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
                 });
-        this.softly.assertThat(seq(metadata).toList())
+        this.softly.assertThat(seq(statistics).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
                             .isEqualTo("my-connect-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final FullErrorMetadata value = r.value();
+                    final FullErrorStatistics value = record.value();
                     this.softly.assertThat(value.getCount()).isEqualTo(1);
                     this.softly.assertThat(parseDateTime(value.getCreated()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
@@ -370,11 +462,11 @@ class DeadLetterAnalyzerTopologyTest {
                 });
         this.softly.assertThat(seq(examples).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
                             .isEqualTo("my-connect-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final ErrorExample value = r.value();
-                    final FormattedDeadLetterWithContext example = value.getExample();
+                    final ErrorExample value = record.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
                     this.softly.assertThat(example.getDeadLetter()).isEqualTo(expectedDeadLetter);
                     this.softly.assertThat(example.getKey()).isEqualTo("key");
                     this.softly.assertThat(example.getOffset()).isEqualTo(0L);
@@ -384,19 +476,18 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(parseDateTime(example.getTimestamp()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
                 });
-        this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
+        this.assumeNoDeadLetters();
     }
 
     @Test
     void shouldProcessStreamsHeaderErrors() {
         this.startApp();
-        final TestInput<String, String> input = this.getInput(Serdes.String())
+        final TestInput<String, String> input = this.getStreamsInput(Serdes.String())
                 .withValueSerde(Serdes.String());
-        final TestOutput<String, FormattedDeadLetterWithFullContext> processedDeadLetters =
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
-        final TestOutput<String, FullErrorMetadata> metadata = this.getMetadata();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
         final TestOutput<String, ErrorExample> examples = this.getExamples();
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
 
         final long firstTimestamp = 0L;
         final Headers headers = new RecordHeaders()
@@ -424,9 +515,9 @@ class DeadLetterAnalyzerTopologyTest {
                 .build();
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
-                    final FormattedDeadLetterWithFullContext value = r.value();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
+                    final FullDeadLetterWithContext value = record.value();
                     this.softly.assertThat(value.getKey()).isEqualTo("key");
                     this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
                     this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
@@ -436,12 +527,12 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(parseDateTime(value.getTimestamp()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
                 });
-        this.softly.assertThat(seq(metadata).toList())
+        this.softly.assertThat(seq(statistics).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
                             .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final FullErrorMetadata value = r.value();
+                    final FullErrorStatistics value = record.value();
                     this.softly.assertThat(value.getCount()).isEqualTo(1);
                     this.softly.assertThat(parseDateTime(value.getCreated()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
@@ -452,11 +543,11 @@ class DeadLetterAnalyzerTopologyTest {
                 });
         this.softly.assertThat(seq(examples).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
                             .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final ErrorExample value = r.value();
-                    final FormattedDeadLetterWithContext example = value.getExample();
+                    final ErrorExample value = record.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
                     this.softly.assertThat(example.getDeadLetter()).isEqualTo(expectedDeadLetter);
                     this.softly.assertThat(example.getKey()).isEqualTo("key");
                     this.softly.assertThat(example.getOffset()).isEqualTo(0L);
@@ -466,18 +557,18 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(parseDateTime(example.getTimestamp()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
                 });
-        this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
+        this.assumeNoDeadLetters();
     }
 
     @Test
     void shouldReadAvroKey() {
         this.startApp();
-        final TestInput<SpecificRecord, SpecificRecord> input = this.getInput(this.app.getSpecificAvroSerde(true));
-        final TestOutput<String, FormattedDeadLetterWithFullContext> processedDeadLetters =
+        final TestInput<SpecificRecord, SpecificRecord> input =
+                this.getStreamsInput(this.app.getSpecificAvroSerde(true));
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
-        final TestOutput<String, FullErrorMetadata> metadata = this.getMetadata();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
         final TestOutput<String, ErrorExample> examples = this.getExamples();
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
 
         final DeadLetter firstDeadLetter = DeadLetter.newBuilder()
                 .setInputValue("foo")
@@ -490,24 +581,29 @@ class DeadLetterAnalyzerTopologyTest {
         input.add(TestRecord.newBuilder().setId(1).build(), firstDeadLetter);
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
-                    final FormattedDeadLetterWithFullContext value = r.value();
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
+                    final FullDeadLetterWithContext value = record.value();
                     this.softly.assertThat(value.getKey()).isEqualTo("{\"id\":1}");
                 });
-        this.softly.assertThat(seq(metadata).toList())
+        this.softly.assertThat(seq(statistics).toList())
                 .hasSize(1)
-                .anySatisfy(r -> this.softly.assertThat(r.key())
+                .anySatisfy(record -> this.softly.assertThat(record.key())
                         .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)"));
         this.softly.assertThat(seq(examples).toList())
                 .hasSize(1)
-                .anySatisfy(r -> {
-                    this.softly.assertThat(r.key())
+                .anySatisfy(record -> {
+                    this.softly.assertThat(record.key())
                             .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final ErrorExample value = r.value();
-                    final FormattedDeadLetterWithContext example = value.getExample();
+                    final ErrorExample value = record.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
                     this.softly.assertThat(example.getKey()).isEqualTo("{\"id\":1}");
                 });
+        this.assumeNoDeadLetters();
+    }
+
+    private void assumeNoDeadLetters() {
+        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
         this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
     }
 
@@ -536,8 +632,8 @@ class DeadLetterAnalyzerTopologyTest {
         return builder.build();
     }
 
-    private TestOutput<String, FormattedDeadLetterWithFullContext> getProcessedDeadLetters() {
-        final Serde<FormattedDeadLetterWithFullContext> valueSerde = this.getLargeMessageSerde();
+    private TestOutput<String, FullDeadLetterWithContext> getProcessedDeadLetters() {
+        final Serde<FullDeadLetterWithContext> valueSerde = this.getLargeMessageSerde();
         return this.topology.streamOutput(this.app.getOutputTopic())
                 .withValueSerde(valueSerde);
     }
@@ -548,7 +644,7 @@ class DeadLetterAnalyzerTopologyTest {
         return valueSerde;
     }
 
-    private TestOutput<String, FullErrorMetadata> getMetadata() {
+    private TestOutput<String, FullErrorStatistics> getStatistics() {
         return this.topology.streamOutput(this.app.getStatsTopic())
                 .withValueSerde(this.app.getSpecificAvroSerde(false));
     }
@@ -565,9 +661,8 @@ class DeadLetterAnalyzerTopologyTest {
                 .withValueSerde(valueSerde);
     }
 
-    private <K> TestInput<K, SpecificRecord> getInput(final Serde<K> keySerde) {
-        final String topic = "my-stream-dead-letter-topic";
-        return this.getInput(keySerde, topic);
+    private <K> TestInput<K, SpecificRecord> getStreamsInput(final Serde<K> keySerde) {
+        return this.getInput(keySerde, "my-stream-dead-letter-topic");
     }
 
     private <K> TestInput<K, SpecificRecord> getInput(final Serde<K> keySerde, final String topic) {

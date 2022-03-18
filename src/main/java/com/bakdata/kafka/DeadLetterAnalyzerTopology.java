@@ -55,7 +55,7 @@ import org.apache.kafka.streams.state.Stores;
 @Builder
 @Getter
 class DeadLetterAnalyzerTopology {
-    private static final String METADATA_STORE_NAME = "store";
+    private static final String STATISTICS_STORE_NAME = "statistics";
     private final @NonNull Pattern inputPattern;
     private final @NonNull String outputTopic;
     private final @NonNull String statsTopic;
@@ -81,9 +81,9 @@ class DeadLetterAnalyzerTopology {
                 .build();
     }
 
-    private static FormattedDeadLetterWithContext format(final DeadLetterWithContext deadLetterWithContext) {
+    private static ExampleDeadLetterWithContext format(final DeadLetterWithContext deadLetterWithContext) {
         final Context context = deadLetterWithContext.getContext();
-        return FormattedDeadLetterWithContext.newBuilder()
+        return ExampleDeadLetterWithContext.newBuilder()
                 .setDeadLetter(deadLetterWithContext.getDeadLetter())
                 .setKey(context.getKey())
                 .setOffset(context.getOffset())
@@ -108,7 +108,7 @@ class DeadLetterAnalyzerTopology {
 
         final KStream<ErrorKey, Result> aggregated = this.aggregate(deadLettersWithContext);
         aggregated
-                .mapValues((errorKey, result) -> result.toFullErrorMetadata(errorKey))
+                .mapValues((errorKey, result) -> result.toFullErrorStatistics(errorKey))
                 .selectKey((k, v) -> toElasticKey(k))
                 .to(this.statsTopic, Produced.valueSerde(this.getSpecificAvroSerde(false)));
         aggregated
@@ -160,8 +160,8 @@ class DeadLetterAnalyzerTopology {
 
     private KStream<ErrorKey, Result> aggregate(final KStream<?, KeyedDeadLetterWithContext> withContext) {
         final Serde<ErrorKey> errorKeySerde = this.getSpecificAvroSerde(true);
-        final StoreBuilder<KeyValueStore<ErrorKey, ErrorMetadata>> metadataStore =
-                this.createMetadataStore(errorKeySerde);
+        final StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> statisticsStore =
+                this.createStatisticsStore(errorKeySerde);
 
         final KStream<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
@@ -172,12 +172,12 @@ class DeadLetterAnalyzerTopology {
                         new ValueTransformerWithKeySupplier<>() {
                             @Override
                             public ValueTransformerWithKey<ErrorKey, DeadLetterWithContext, Result> get() {
-                                return new ErrorAggregatingTransformer(metadataStore.name());
+                                return new ErrorAggregatingTransformer(statisticsStore.name());
                             }
 
                             @Override
                             public Set<StoreBuilder<?>> stores() {
-                                return Set.of(metadataStore);
+                                return Set.of(statisticsStore);
                             }
                         }
                 ));
@@ -190,10 +190,10 @@ class DeadLetterAnalyzerTopology {
         return processedAggregations.flatMapValues(ProcessedValue::getValues);
     }
 
-    private StoreBuilder<KeyValueStore<ErrorKey, ErrorMetadata>> createMetadataStore(
+    private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
             final Serde<ErrorKey> errorKeySerde) {
-        final KeyValueBytesStoreSupplier metadataStoreSupplier = Stores.inMemoryKeyValueStore(METADATA_STORE_NAME);
-        return Stores.keyValueStoreBuilder(metadataStoreSupplier, errorKeySerde, this.getSpecificAvroSerde(false));
+        final KeyValueBytesStoreSupplier statisticsStoreSupplier = Stores.inMemoryKeyValueStore(STATISTICS_STORE_NAME);
+        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde, this.getSpecificAvroSerde(false));
     }
 
     private <K> KStream<K, KeyedDeadLetterWithContext> enrichWithContext(

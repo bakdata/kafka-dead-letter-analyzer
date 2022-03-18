@@ -84,11 +84,12 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
         super.cleanUpRun(cleanUpRunner);
 
         if (this.isDeleteOutputTopic()) {
-            final AbstractLargeMessageConfig largeMessageConfig =
-                    new AbstractLargeMessageConfig(this.getKafkaProperties());
-            largeMessageConfig.getStorer().deleteAllFiles(this.getOutputTopic());
-            largeMessageConfig.getStorer().deleteAllFiles(this.getErrorTopic());
-            largeMessageConfig.getStorer().deleteAllFiles(this.getExamplesTopic());
+            final Properties kafkaProperties = this.getKafkaProperties();
+            final AbstractLargeMessageConfig largeMessageConfig = new AbstractLargeMessageConfig(kafkaProperties);
+            final LargeMessageStoringClient storingClient = largeMessageConfig.getStorer();
+            storingClient.deleteAllFiles(this.getOutputTopic());
+            storingClient.deleteAllFiles(this.getErrorTopic());
+            storingClient.deleteAllFiles(this.getExamplesTopic());
         }
     }
 

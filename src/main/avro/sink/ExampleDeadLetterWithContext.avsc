@@ -1,8 +1,8 @@
 {
   "type": "record",
-  "name": "Context",
+  "name": "ExampleDeadLetterWithContext",
   "namespace": "com.bakdata.kafka",
-  "doc": "The Kafka context of a message",
+  "doc": "Dead letter with its context. Used for error examples. Record is intended for storage in a sink data system.",
   "fields": [
     {
       "name": "key",
@@ -21,11 +21,13 @@
     },
     {
       "name": "timestamp",
-      "type": {
-        "type": "long",
-        "logicalType": "timestamp-millis"
-      },
-      "doc": "Timestamp of the message"
+      "type": "string",
+      "doc": "Timestamp of the message in yyyy-MM-ddTHH:mm:ss.SSS format"
+    },
+    {
+      "name": "dead_letter",
+      "type": "DeadLetter",
+      "doc": "Dead letter representing an error that has occurred when processing data"
     }
   ]
 }

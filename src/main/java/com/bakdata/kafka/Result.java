@@ -33,18 +33,18 @@ import org.jooq.lambda.Seq;
 @Builder
 class Result {
     @Getter
-    private final @NonNull ErrorMetadata metadata;
+    private final @NonNull ErrorStatistics statistics;
     private final DeadLetterWithContext example;
 
     Iterable<DeadLetterWithContext> getExamples() {
         return Seq.seq(Optional.ofNullable(this.example));
     }
 
-    FullErrorMetadata toFullErrorMetadata(final ErrorKey errorKey) {
-        return FullErrorMetadata.newBuilder()
-                .setCount(this.metadata.getCount())
-                .setCreated(Formatter.format(this.metadata.getCreated()))
-                .setUpdated(Formatter.format(this.metadata.getUpdated()))
+    FullErrorStatistics toFullErrorStatistics(final ErrorKey errorKey) {
+        return FullErrorStatistics.newBuilder()
+                .setCount(this.statistics.getCount())
+                .setCreated(Formatter.format(this.statistics.getCreated()))
+                .setUpdated(Formatter.format(this.statistics.getUpdated()))
                 .setType(errorKey.getType())
                 .setTopic(errorKey.getTopic())
                 .build();

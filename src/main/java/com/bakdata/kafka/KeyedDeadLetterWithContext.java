@@ -35,9 +35,9 @@ class KeyedDeadLetterWithContext {
     @NonNull DeadLetterWithContext value;
     @NonNull ErrorKey key;
 
-    FormattedDeadLetterWithFullContext format() {
+    FullDeadLetterWithContext format() {
         final Context context = this.value.getContext();
-        return FormattedDeadLetterWithFullContext.newBuilder()
+        return FullDeadLetterWithContext.newBuilder()
                 .setDeadLetter(this.value.getDeadLetter())
                 .setTopic(this.key.getTopic())
                 .setType(this.key.getType())

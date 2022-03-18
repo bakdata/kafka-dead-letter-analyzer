@@ -1,25 +1,29 @@
 {
   "type": "record",
-  "name": "ErrorMetadata",
+  "name": "ErrorStatistics",
   "namespace": "com.bakdata.kafka",
+  "doc": "Statistics associated with a type of error",
   "fields": [
     {
       "name": "count",
-      "type": "int"
+      "type": "int",
+      "doc": "Number of occurrences of the error"
     },
     {
       "name": "created",
       "type": {
         "type": "long",
         "logicalType": "timestamp-millis"
-      }
+      },
+      "doc": "First time an error has occurred"
     },
     {
       "name": "updated",
       "type": {
         "type": "long",
         "logicalType": "timestamp-millis"
-      }
+      },
+      "doc": "Last time an error has occurred"
     }
   ]
 }
