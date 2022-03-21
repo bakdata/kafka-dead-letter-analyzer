@@ -66,11 +66,11 @@ You can use the chart provided with [streams-bootstrap](https://github.com/bakda
 ## Kafka Connect
 
 If you want to store the analysis results in an external data system, such as Elasticsearch, you can do so using Kafka Connect.
-We provided examples for each of the three output topics.
+We provide examples for each of the three output topics.
 However, they can be easily adapted to any data system supported by Kafka Connect.
 
 `dead-letters-all`:
-```
+```json
 {
     "behavior.on.malformed.documents": "warn",
     "connection.password": "password",
@@ -98,7 +98,7 @@ However, they can be easily adapted to any data system supported by Kafka Connec
 This connector partitions the dead letters by day so that you can set up Index Lifecycle Management for dropping old errors.
 
 `dead-letter-stats`:
-```
+```json
 {
     "behavior.on.malformed.documents": "warn",
     "connection.password": "password",
@@ -125,7 +125,7 @@ This connector partitions the dead letters by day so that you can set up Index L
 ```
 
 `dead-letter-examples`:
-```
+```json
 {
     "behavior.on.malformed.documents": "warn",
     "connection.password": "password",

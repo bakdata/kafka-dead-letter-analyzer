@@ -37,10 +37,10 @@ class HeaderFilter implements ValueTransformer<Object, Iterable<Object>> {
     private final String requiredHeader;
     private ProcessorContext context;
 
-    private static List<Object> newList(final Object v) {
+    private static List<Object> newList(final Object value) {
         //List.of does not allow null values
         final List<Object> list = new ArrayList<>();
-        list.add(v);
+        list.add(value);
         return list;
     }
 

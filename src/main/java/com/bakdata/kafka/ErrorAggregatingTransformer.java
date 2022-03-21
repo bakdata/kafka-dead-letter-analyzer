@@ -47,7 +47,7 @@ class ErrorAggregatingTransformer
     }
 
     private static ErrorStatistics merge(final ErrorStatistics oldStatistics, final ErrorStatistics newStatistics) {
-        return ErrorStatistics.newBuilder(oldStatistics)
+        return ErrorStatistics.newBuilder()
                 .setCount(oldStatistics.getCount() + newStatistics.getCount())
                 .setCreated(Seq.of(oldStatistics.getCreated(), newStatistics.getCreated()).min().orElseThrow())
                 .setUpdated(Seq.of(oldStatistics.getUpdated(), newStatistics.getUpdated()).max().orElseThrow())

@@ -486,8 +486,7 @@ class DeadLetterAnalyzerTopologyTest {
                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        input
-                .add("key", "value", 0L, headers);
+        input.add("key", "value", 0L, headers);
 
         final DeadLetter expectedDeadLetter = DeadLetter.newBuilder()
                 .setInputValue("value")

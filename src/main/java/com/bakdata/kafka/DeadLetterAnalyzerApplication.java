@@ -43,8 +43,8 @@ import picocli.CommandLine.Option;
 @Setter
 public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication {
 
-    private static final String EXAMPLES = "examples";
-    private static final String STATS = "stats";
+    private static final String EXAMPLES_TOPIC_ROLE = "examples";
+    private static final String STATS_TOPIC_ROLE = "stats";
     @Option(names = "--max-size", showDefaultValue = Visibility.ALWAYS,
             description = "Maximum size of dead letters in bytes to send to output and examples topic")
     private int maxSize = Integer.MAX_VALUE;
@@ -96,11 +96,11 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
     }
 
     private String getStatsTopic() {
-        return this.getOutputTopic(STATS);
+        return this.getOutputTopic(STATS_TOPIC_ROLE);
     }
 
     private String getExamplesTopic() {
-        return this.getOutputTopic(EXAMPLES);
+        return this.getOutputTopic(EXAMPLES_TOPIC_ROLE);
     }
 
 }

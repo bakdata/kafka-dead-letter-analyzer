@@ -68,8 +68,8 @@ class DeadLetterAnalyzerTopology {
         return new StreamsConfig(properties).originals();
     }
 
-    private static String toElasticKey(final ErrorKey k) {
-        return String.format("%s:%s", k.getTopic(), k.getType());
+    private static String toElasticKey(final ErrorKey key) {
+        return String.format("%s:%s", key.getTopic(), key.getType());
     }
 
     private static ErrorExample toErrorExample(final ErrorKey errorKey,
@@ -92,8 +92,8 @@ class DeadLetterAnalyzerTopology {
                 .build();
     }
 
-    private static List<DeadLetter> getDeadLetters(final Object v) {
-        return v instanceof DeadLetter ? List.of((DeadLetter) v) : List.of();
+    private static List<DeadLetter> getDeadLetters(final Object object) {
+        return object instanceof DeadLetter ? List.of((DeadLetter) object) : List.of();
     }
 
     void build(final StreamsBuilder builder) {

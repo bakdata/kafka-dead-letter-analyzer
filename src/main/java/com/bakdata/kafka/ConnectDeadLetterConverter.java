@@ -70,6 +70,11 @@ class ConnectDeadLetterConverter implements DeadLetterConverter {
                 .flatMap(HeaderHelper::stringValue);
         final Optional<String> stackTrace = getHeader(headers, ERROR_HEADER_EXCEPTION_STACK_TRACE)
                 .flatMap(HeaderHelper::stringValue);
+        final ErrorDescription description = ErrorDescription.newBuilder()
+                .setErrorClass(errorClass.orElse(null))
+                .setMessage(message.orElse(null))
+                .setStackTrace(stackTrace.orElse(null))
+                .build();
         return DeadLetter.newBuilder()
                 .setPartition(partition.orElse(null))
                 .setTopic(topic.orElse(null))
@@ -77,11 +82,7 @@ class ConnectDeadLetterConverter implements DeadLetterConverter {
                 .setInputValue(Optional.ofNullable(value).map(ErrorUtil::toString).orElse(null))
                 .setDescription(
                         String.format("Error in stage %s (%s) in %s[%d]", stage, clazz, connectorName, taskId))
-                .setCause(ErrorDescription.newBuilder()
-                        .setErrorClass(errorClass.orElse(null))
-                        .setMessage(message.orElse(null))
-                        .setStackTrace(stackTrace.orElse(null))
-                        .build())
+                .setCause(description)
                 .build();
     }
 

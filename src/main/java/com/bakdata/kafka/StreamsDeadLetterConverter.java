@@ -24,8 +24,6 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.HeaderHelper.getHeader;
-import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
 import static com.bakdata.kafka.ErrorHeaderTransformer.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_MESSAGE;
@@ -33,6 +31,8 @@ import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_STACK_TRACE;
 import static com.bakdata.kafka.ErrorHeaderTransformer.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
+import static com.bakdata.kafka.HeaderHelper.getHeader;
+import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -43,13 +43,13 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
 
     @Override
     public DeadLetter convert(final Object value, final Headers headers) {
-        final Integer partition = getHeader(headers, PARTITION)
+        final int partition = getHeader(headers, PARTITION)
                 .map(HeaderHelper::intValue)
                 .orElseThrow(missingRequiredHeader(PARTITION));
         final String topic = getHeader(headers, TOPIC)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(TOPIC));
-        final Long offset = getHeader(headers, OFFSET)
+        final long offset = getHeader(headers, OFFSET)
                 .map(HeaderHelper::longValue)
                 .orElseThrow(missingRequiredHeader(OFFSET));
         final String description = getHeader(headers, DESCRIPTION)
@@ -64,17 +64,18 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
         final String stackTrace = getHeader(headers, EXCEPTION_STACK_TRACE)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(EXCEPTION_STACK_TRACE));
+        final ErrorDescription errorDescription = ErrorDescription.newBuilder()
+                .setErrorClass(errorClass)
+                .setMessage(message)
+                .setStackTrace(stackTrace)
+                .build();
         return DeadLetter.newBuilder()
                 .setPartition(partition)
                 .setTopic(topic)
                 .setOffset(offset)
                 .setInputValue(Optional.ofNullable(value).map(ErrorUtil::toString).orElse(null))
                 .setDescription(description)
-                .setCause(ErrorDescription.newBuilder()
-                        .setErrorClass(errorClass)
-                        .setMessage(message)
-                        .setStackTrace(stackTrace)
-                        .build())
+                .setCause(errorDescription)
                 .build();
     }
 }

@@ -37,6 +37,7 @@ class StackTraceClassifier {
     private static final Pattern LINE =
             Pattern.compile("(?:\n|^)\tat ([._a-zA-Z0-9]+\\([_a-zA-Z0-9]+.java:\\d+\\))(?:\n|$)");
     private static final Pattern EXCEPTION = Pattern.compile("^([._a-zA-Z0-9$]+).*");
+    public static final Splitter NEW_LINE_SPLITTER = Splitter.on("\n");
 
     static String classify(final String stackTrace) {
         return extractLine(stackTrace)
@@ -54,7 +55,7 @@ class StackTraceClassifier {
     }
 
     private static String extractExceptionFromFirstLine(final String stackTrace) {
-        final String firstLine = Splitter.on("\n").splitToStream(stackTrace).findFirst().orElseThrow();
+        final String firstLine = NEW_LINE_SPLITTER.splitToStream(stackTrace).findFirst().orElseThrow();
         final Matcher matcher = EXCEPTION.matcher(firstLine);
         if (matcher.find()) {
             return matcher.group(1);
