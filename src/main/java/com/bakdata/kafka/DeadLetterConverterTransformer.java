@@ -40,8 +40,8 @@ class DeadLetterConverterTransformer implements ValueTransformer<Object, DeadLet
     }
 
     @Override
-    public DeadLetter transform(final Object o) {
-        return this.converter.convert(o, this.context.headers());
+    public DeadLetter transform(final Object object) {
+        return this.converter.convert(object, this.context.headers());
     }
 
     @Override
