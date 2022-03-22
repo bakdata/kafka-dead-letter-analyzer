@@ -47,7 +47,7 @@ import static org.jooq.lambda.Seq.seq;
 
 import com.bakdata.fluent_kafka_streams_tests.TestInput;
 import com.bakdata.fluent_kafka_streams_tests.TestOutput;
-import com.bakdata.fluent_kafka_streams_tests.TestTopology;
+import com.bakdata.fluent_kafka_streams_tests.junit5.TestTopologyExtension;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -64,14 +64,16 @@ import org.apache.kafka.streams.Topology;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 @ExtendWith(SoftAssertionsExtension.class)
 class DeadLetterAnalyzerTopologyTest {
     private DeadLetterAnalyzerTopology app;
-    private TestTopology<String, DeadLetter> topology;
+    @RegisterExtension
+    TestTopologyExtension<String, DeadLetter> topology =
+            new TestTopologyExtension<>(this::createTopology, new DeadLetterAnalyzerApplication().getKafkaProperties());
     @InjectSoftAssertions
     private SoftAssertions softly;
 
@@ -83,16 +85,8 @@ class DeadLetterAnalyzerTopologyTest {
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 
-    @AfterEach
-    void tearDown() {
-        if (this.topology != null) {
-            this.topology.stop();
-        }
-    }
-
     @Test
     void shouldProcessDeadLetter() {
-        this.startApp();
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
@@ -158,7 +152,6 @@ class DeadLetterAnalyzerTopologyTest {
 
     @Test
     void shouldAggregateStatistics() {
-        this.startApp();
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
         final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
 
@@ -216,7 +209,6 @@ class DeadLetterAnalyzerTopologyTest {
 
     @Test
     void shouldOnlyForwardFirstExample() {
-        this.startApp();
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
@@ -280,47 +272,7 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     @Test
-    void shouldFilterByMaxSize() {
-        this.startApp(0);
-        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
-        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
-                this.getProcessedDeadLetters();
-        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
-        final TestOutput<String, ErrorExample> examples = this.getExamples();
-
-        final DeadLetter firstDeadLetter = DeadLetter.newBuilder()
-                .setInputValue("foo")
-                .setCause(ErrorDescription.newBuilder()
-                        .setMessage("message")
-                        .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
-                        .build())
-                .setDescription("description")
-                .build();
-        final long firstTimestamp = 0L;
-        input.add("key", firstDeadLetter, firstTimestamp);
-        this.softly.assertThat(seq(processedDeadLetters).toList()).isEmpty();
-        this.softly.assertThat(seq(statistics).toList())
-                .hasSize(1)
-                .anySatisfy(record -> {
-                    this.softly.assertThat(record.key())
-                            .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final FullErrorStatistics value = record.value();
-                    this.softly.assertThat(value.getCount()).isEqualTo(1);
-                    this.softly.assertThat(parseDateTime(value.getCreated()))
-                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
-                    this.softly.assertThat(parseDateTime(value.getUpdated()))
-                            .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
-                    this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
-                });
-        this.softly.assertThat(seq(examples).toList()).isEmpty();
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
-        this.softly.assertThat(deadLetters).isEmpty();
-    }
-
-    @Test
     void shouldProduceDeadLetterAndAnalyze() {
-        this.startApp();
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
         final DeadLetter deadLetter = DeadLetter.newBuilder()
                 .setInputValue("foo")
@@ -385,7 +337,6 @@ class DeadLetterAnalyzerTopologyTest {
 
     @Test
     void shouldProcessConnectErrors() {
-        this.startApp();
         final TestInput<String, SpecificRecord> input = this.getConnectInput(Serdes.String());
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
@@ -469,7 +420,6 @@ class DeadLetterAnalyzerTopologyTest {
 
     @Test
     void shouldProcessStreamsHeaderErrors() {
-        this.startApp();
         final TestInput<String, String> input = this.getStreamsInput(Serdes.String())
                 .withValueSerde(Serdes.String());
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
@@ -549,7 +499,6 @@ class DeadLetterAnalyzerTopologyTest {
 
     @Test
     void shouldReadAvroKey() {
-        this.startApp();
         final TestInput<SpecificRecord, SpecificRecord> input =
                 this.getStreamsInput(this.app.getSpecificAvroSerde(true));
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
@@ -594,17 +543,7 @@ class DeadLetterAnalyzerTopologyTest {
         this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
     }
 
-    private void startApp() {
-        this.startApp(Integer.MAX_VALUE);
-    }
-
-    private void startApp(final int maxSize) {
-        final Properties kafkaProperties = new DeadLetterAnalyzerApplication().getKafkaProperties();
-        this.topology = new TestTopology<>(properties -> this.createTopology(properties, maxSize), kafkaProperties);
-        this.topology.start();
-    }
-
-    private Topology createTopology(final Properties properties, final int maxSize) {
+    private Topology createTopology(final Properties properties) {
         this.app = DeadLetterAnalyzerTopology.builder()
                 .inputPattern(Pattern.compile(".*-dead-letter-topic"))
                 .outputTopic("output")
@@ -612,7 +551,6 @@ class DeadLetterAnalyzerTopologyTest {
                 .examplesTopic("examples")
                 .statsTopic("stats")
                 .kafkaProperties(properties)
-                .sizeFilter(new SizeFilter(maxSize))
                 .build();
         final StreamsBuilder builder = new StreamsBuilder();
         this.app.build(builder);

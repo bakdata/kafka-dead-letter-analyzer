@@ -62,7 +62,6 @@ class DeadLetterAnalyzerTopology {
     private final @NonNull String examplesTopic;
     private final @NonNull String errorTopic;
     private final @NonNull Properties kafkaProperties;
-    private final @NonNull SizeFilter sizeFilter;
 
     private static Map<String, Object> originals(final Properties properties) {
         return new StreamsConfig(properties).originals();
@@ -103,7 +102,6 @@ class DeadLetterAnalyzerTopology {
         deadLettersWithContext
                 .selectKey((k, v) -> v.extractElasticKey())
                 .mapValues(KeyedDeadLetterWithContext::format)
-                .filter(this.sizeFilter::filterMaxSize)
                 .to(this.outputTopic);
 
         final KStream<ErrorKey, Result> aggregated = this.aggregate(deadLettersWithContext);
@@ -115,7 +113,6 @@ class DeadLetterAnalyzerTopology {
                 .flatMapValues(Result::getExamples)
                 .mapValues(DeadLetterAnalyzerTopology::toErrorExample)
                 .selectKey((k, v) -> toElasticKey(k))
-                .filter(this.sizeFilter::filterMaxSize)
                 .to(this.examplesTopic);
     }
 

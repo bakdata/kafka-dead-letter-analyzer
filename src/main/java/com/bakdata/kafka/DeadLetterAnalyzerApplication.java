@@ -32,8 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import picocli.CommandLine.Help.Visibility;
-import picocli.CommandLine.Option;
 
 /**
  * A Kafka Streams application that analyzes dead letters in your Kafka cluster
@@ -45,9 +43,6 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
 
     private static final String EXAMPLES_TOPIC_ROLE = "examples";
     private static final String STATS_TOPIC_ROLE = "stats";
-    @Option(names = "--max-size", showDefaultValue = Visibility.ALWAYS,
-            description = "Maximum size of dead letters in bytes to send to output and examples topic")
-    private int maxSize = Integer.MAX_VALUE;
 
     public static void main(final String[] args) {
         KafkaStreamsApplication.startApplication(new DeadLetterAnalyzerApplication(), args);
@@ -62,7 +57,6 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
                 .examplesTopic(this.getExamplesTopic())
                 .errorTopic(this.getErrorTopic())
                 .kafkaProperties(this.getKafkaProperties())
-                .sizeFilter(new SizeFilter(this.maxSize))
                 .build()
                 .build(builder);
     }
