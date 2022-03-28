@@ -57,8 +57,8 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
     api(group = "com.bakdata.kafka", name = "streams-bootstrap", version = "2.1.0")
-    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.0.0")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.1.5")
+    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.1.1")
+    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.3.0")
     implementation(group = "org.jooq", name = "jool", version = "0.9.14")
     avroApi(group = "com.bakdata.kafka", name = "error-handling", version = "1.2.2")
 

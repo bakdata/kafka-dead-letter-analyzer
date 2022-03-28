@@ -67,6 +67,7 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
         kafkaProperties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, StringSerde.class);
         kafkaProperties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, LargeMessageSerde.class);
         kafkaProperties.put(LargeMessageSerdeConfig.VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
+        kafkaProperties.put(AbstractLargeMessageConfig.USE_HEADERS_CONFIG, true);
         return kafkaProperties;
     }
 

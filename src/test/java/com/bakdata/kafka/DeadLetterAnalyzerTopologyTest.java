@@ -33,6 +33,7 @@ import static com.bakdata.kafka.ErrorHeaderTransformer.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
 import static com.bakdata.kafka.Formatter.DATE_TIME_FORMATTER;
+import static com.bakdata.kafka.HeaderLargeMessagePayloadProtocol.getHeaderName;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION_MESSAGE;
@@ -54,6 +55,7 @@ import java.time.ZoneId;
 import java.util.Properties;
 import java.util.regex.Pattern;
 import org.apache.avro.specific.SpecificRecord;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.Serde;
@@ -64,6 +66,7 @@ import org.apache.kafka.streams.Topology;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -83,6 +86,19 @@ class DeadLetterAnalyzerTopologyTest {
 
     private static LocalDateTime toDateTime(final Instant instant) {
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+    }
+
+    private static <T> ProducerRecord<String, T> deserializeNonBacked(final Serde<? extends T> valueSerde,
+            final ProducerRecord<String, byte[]> record) {
+        final Headers headers = new RecordHeaders(record.headers())
+                .add(getHeaderName(false), new byte[]{FlagHelper.IS_NOT_BACKED});
+        final String topic = record.topic();
+        final byte[] value = record.value();
+        final T deserializedValue = valueSerde.deserializer().deserialize(topic, headers, value);
+        final Integer partition = record.partition();
+        final Long timestamp = record.timestamp();
+        final String key = record.key();
+        return new ProducerRecord<>(topic, partition, timestamp, key, deserializedValue, headers);
     }
 
     @Test
@@ -288,10 +304,10 @@ class DeadLetterAnalyzerTopologyTest {
                 this.getProcessedDeadLetters();
         final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
         final TestOutput<String, ErrorExample> examples = this.getExamples();
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
 
         input.add("key", deadLetter);
-        this.softly.assertThat(seq(deadLetters).toList())
+        final Seq<ProducerRecord<String, DeadLetter>> deadLetters = this.getDeadLetters();
+        this.softly.assertThat(deadLetters.toList())
                 .hasSize(1)
                 .anySatisfy(record -> {
                     this.softly.assertThat(record.key()).isEqualTo("key");
@@ -539,7 +555,7 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     private void assertNoDeadLetters() {
-        final TestOutput<String, DeadLetter> deadLetters = this.getDeadLetters();
+        final Iterable<ProducerRecord<String, DeadLetter>> deadLetters = this.getDeadLetters();
         this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
     }
 
@@ -580,10 +596,15 @@ class DeadLetterAnalyzerTopologyTest {
                 .withValueSerde(valueSerde);
     }
 
-    private TestOutput<String, DeadLetter> getDeadLetters() {
+    private Seq<ProducerRecord<String, DeadLetter>> getDeadLetters() {
         final Serde<DeadLetter> valueSerde = this.getLargeMessageSerde();
-        return this.topology.streamOutput(this.app.getErrorTopic())
-                .withValueSerde(valueSerde);
+        final TestOutput<String, byte[]> output = this.topology.streamOutput(this.app.getErrorTopic())
+                .withValueSerde(Serdes.ByteArray());
+        return seq(output)
+                // Record has already been consumed by the analyzer and headers are modified.
+                // This only happens in the TestDriver because record headers are reused.
+                // In Kafka this does not happen because the headers are stored server-side.
+                .map(record -> deserializeNonBacked(valueSerde, record));
     }
 
     private <K> TestInput<K, SpecificRecord> getStreamsInput(final Serde<K> keySerde) {
