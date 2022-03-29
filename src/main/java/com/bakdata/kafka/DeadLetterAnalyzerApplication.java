@@ -58,7 +58,7 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
                 .errorTopic(this.getErrorTopic())
                 .kafkaProperties(this.getKafkaProperties())
                 .build()
-                .build(builder);
+                .buildTopology(builder);
     }
 
     @Override

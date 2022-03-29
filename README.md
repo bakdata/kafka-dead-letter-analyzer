@@ -9,8 +9,9 @@ A Kafka Streams application that analyzes dead letters in your Kafka cluster.
 
 Dead letter analyzer supports three different types of dead letters in your Kafka cluster:
 
-- Kafka Connect dead letters (https://www.confluent.io/blog/kafka-connect-deep-dive-error-handling-dead-letter-queues/)
-- Kafka Streams dead letters in a similar format to Kafka Connect generated using [kafka-error-handling](https://github.com/bakdata/kafka-error-handling)
+- [Kafka Connect dead letters](https://www.confluent.io/blog/kafka-connect-deep-dive-error-handling-dead-letter-queues/)
+- Kafka Streams dead letters in a similar format to Kafka Connect generated
+  using [kafka-error-handling](https://github.com/bakdata/kafka-error-handling)
 - Kafka Streams dead letters in Apache Avro format generated using [kafka-error-handling](https://github.com/bakdata/kafka-error-handling)
 
 It picks up all these dead letters and aggregates them by identifying different error types.
@@ -52,13 +53,6 @@ Messages sent to the examples and all topic are serialized using [kafka-large-me
 ## Usage
 
 This application is built using [streams-bootstrap](https://github.com/bakdata/streams-bootstrap) and can be configured as documented.
-Additionally, you can configure the following parameters:
-
-```
-      --max-size=<maxSize>   Maximum size of dead letters in bytes to send to
-                               output and examples topic
-                               Default: 2147483647
-```
 
 We suggest running your application on Kubernetes using Helm.
 You can use the chart provided with [streams-bootstrap](https://github.com/bakdata/streams-bootstrap/tree/master/charts/streams-app).

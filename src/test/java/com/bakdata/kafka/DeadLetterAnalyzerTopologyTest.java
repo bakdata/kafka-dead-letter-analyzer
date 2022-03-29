@@ -569,7 +569,7 @@ class DeadLetterAnalyzerTopologyTest {
                 .kafkaProperties(properties)
                 .build();
         final StreamsBuilder builder = new StreamsBuilder();
-        this.app.build(builder);
+        this.app.buildTopology(builder);
         return builder.build();
     }
 

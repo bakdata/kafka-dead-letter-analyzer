@@ -95,7 +95,7 @@ class DeadLetterAnalyzerTopology {
         return object instanceof DeadLetter ? List.of((DeadLetter) object) : List.of();
     }
 
-    void build(final StreamsBuilder builder) {
+    void buildTopology(final StreamsBuilder builder) {
         final KStream<Object, DeadLetter> allDeadLetters = this.streamDeadLetters(builder);
         final KStream<Object, KeyedDeadLetterWithContext> deadLettersWithContext =
                 this.enrichWithContext(allDeadLetters);
