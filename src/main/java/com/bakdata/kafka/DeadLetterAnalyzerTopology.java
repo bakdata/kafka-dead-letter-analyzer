@@ -62,6 +62,7 @@ class DeadLetterAnalyzerTopology {
     private final @NonNull String examplesTopic;
     private final @NonNull String errorTopic;
     private final @NonNull Properties kafkaProperties;
+    private final int numberOfPartitions;
 
     private static Map<String, Object> originals(final Properties properties) {
         return new StreamsConfig(properties).originals();
@@ -163,7 +164,7 @@ class DeadLetterAnalyzerTopology {
         final KStream<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KStream<ErrorKey, ProcessedValue<DeadLetterWithContext, Result>> processedAggregations = analyzed
-                .repartition(Repartitioned.<ErrorKey, DeadLetterWithContext>numberOfPartitions(100)
+                .repartition(Repartitioned.<ErrorKey, DeadLetterWithContext>numberOfPartitions(this.numberOfPartitions)
                         .withKeySerde(errorKeySerde))
                 .transformValues(ErrorCapturingValueTransformerWithKey.captureErrors(
                         new ValueTransformerWithKeySupplier<>() {

@@ -32,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
+import picocli.CommandLine.Help.Visibility;
+import picocli.CommandLine.Option;
 
 /**
  * A Kafka Streams application that analyzes dead letters in your Kafka cluster
@@ -43,6 +45,9 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
 
     private static final String EXAMPLES_TOPIC_ROLE = "examples";
     private static final String STATS_TOPIC_ROLE = "stats";
+    @Option(names = "--number-of-partitions", showDefaultValue = Visibility.ALWAYS,
+            description = "Number of partitions for repartition topic")
+    private int numberOfPartitions = 100;
 
     public static void main(final String[] args) {
         KafkaStreamsApplication.startApplication(new DeadLetterAnalyzerApplication(), args);
@@ -57,6 +62,7 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
                 .examplesTopic(this.getExamplesTopic())
                 .errorTopic(this.getErrorTopic())
                 .kafkaProperties(this.getKafkaProperties())
+                .numberOfPartitions(this.numberOfPartitions)
                 .build()
                 .buildTopology(builder);
     }
