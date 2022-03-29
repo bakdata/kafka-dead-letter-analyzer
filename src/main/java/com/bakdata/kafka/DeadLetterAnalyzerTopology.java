@@ -163,8 +163,7 @@ class DeadLetterAnalyzerTopology {
         final KStream<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KStream<ErrorKey, ProcessedValue<DeadLetterWithContext, Result>> processedAggregations = analyzed
-                .repartition(Repartitioned.<ErrorKey, DeadLetterWithContext>numberOfPartitions(100)
-                        .withKeySerde(errorKeySerde))
+                .repartition(Repartitioned.with(errorKeySerde, null))
                 .transformValues(ErrorCapturingValueTransformerWithKey.captureErrors(
                         new ValueTransformerWithKeySupplier<>() {
                             @Override
