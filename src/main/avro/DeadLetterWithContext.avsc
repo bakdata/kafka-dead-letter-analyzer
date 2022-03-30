@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "DeadLetterWithContext",
+  "namespace": "com.bakdata.kafka",
+  "doc": "Represents a dead letter along with its Kafka context",
+  "fields": [
+    {
+      "name": "context",
+      "type": "Context",
+      "doc": "Kafka context of message dead letter was created from"
+    },
+    {
+      "name": "dead_letter",
+      "type": "DeadLetter",
+      "doc": "Dead letter representing an error that has occurred when processing data"
+    }
+  ]
+}

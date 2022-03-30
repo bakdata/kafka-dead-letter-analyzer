@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "FullErrorStatistics",
+  "namespace": "com.bakdata.kafka",
+  "doc": "Statistics associated with a type of error. Record is intended for storage in a sink data system.",
+  "fields": [
+    {
+      "name": "count",
+      "type": "int",
+      "doc": "Number of occurrences of the error"
+    },
+    {
+      "name": "created",
+      "type": "string",
+      "doc": "First time an error has occurred in yyyy-MM-ddTHH:mm:ss.SSS format"
+    },
+    {
+      "name": "updated",
+      "type": "string",
+      "doc": "Last time an error has occurred in yyyy-MM-ddTHH:mm:ss.SSS format"
+    },
+    {
+      "name": "topic",
+      "type": "string",
+      "doc": "The topic the error occurred in"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "doc": "The type of the error that has occurred"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "type": "record",
+  "name": "Context",
+  "namespace": "com.bakdata.kafka",
+  "doc": "The Kafka context of a message",
+  "fields": [
+    {
+      "name": "key",
+      "type": "string",
+      "doc": "Key of the message"
+    },
+    {
+      "name": "offset",
+      "type": "long",
+      "doc": "Offset in the partition the message was read from"
+    },
+    {
+      "name": "partition",
+      "type": "int",
+      "doc": "Partition of the topic the message was read from"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Timestamp of the message"
+    }
+  ]
+}

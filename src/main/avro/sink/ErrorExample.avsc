@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "ErrorExample",
+  "namespace": "com.bakdata.kafka",
+  "doc": "Example for a specific error type. Record is intended for storage in a sink data system.",
+  "fields": [
+    {
+      "name": "example",
+      "type": "ExampleDeadLetterWithContext",
+      "doc": "The example representing one specific dead letter along with its context for the error type"
+    },
+    {
+      "name": "topic",
+      "type": "string",
+      "doc": "The topic the error occurred in"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "doc": "The type of the error that has occurred"
+    }
+  ]
+}

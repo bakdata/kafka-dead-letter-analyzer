@@ -1,0 +1,11 @@
+{
+  "name": "TestRecord",
+  "type": "record",
+  "namespace": "com.bakdata.kafka",
+  "fields": [
+    {
+      "name": "id",
+      "type": "int"
+    }
+  ]
+}
