@@ -49,9 +49,8 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
         final String topic = getHeader(headers, TOPIC)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(TOPIC));
-        final long offset = getHeader(headers, OFFSET)
-                .map(HeaderHelper::longValue)
-                .orElseThrow(missingRequiredHeader(OFFSET));
+        final Optional<Long> offset = getHeader(headers, OFFSET)
+                .map(HeaderHelper::longValue);
         final String description = getHeader(headers, DESCRIPTION)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(DESCRIPTION));
@@ -72,7 +71,7 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
         return DeadLetter.newBuilder()
                 .setPartition(partition)
                 .setTopic(topic)
-                .setOffset(offset)
+                .setOffset(offset.orElse(null))
                 .setInputValue(Optional.ofNullable(value).map(ErrorUtil::toString).orElse(null))
                 .setDescription(description)
                 .setCause(errorDescription)

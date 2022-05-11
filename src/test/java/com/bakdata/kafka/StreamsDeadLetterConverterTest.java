@@ -74,15 +74,6 @@ class StreamsDeadLetterConverterTest {
                 Arguments.of(new RecordHeaders()
                                 .add(PARTITION, toBytes(1))
                                 .add(TOPIC, toBytes("my-topic"))
-                                .add(DESCRIPTION, toBytes("description"))
-                                .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
-                                .add(EXCEPTION_MESSAGE, toBytes("my message"))
-                                .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE)),
-                        String.format("Missing required header %s", OFFSET)
-                ),
-                Arguments.of(new RecordHeaders()
-                                .add(PARTITION, toBytes(1))
-                                .add(TOPIC, toBytes("my-topic"))
                                 .add(OFFSET, toBytes(10L))
                                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
@@ -134,7 +125,6 @@ class StreamsDeadLetterConverterTest {
         return new RecordHeaders()
                 .add(PARTITION, toBytes(1))
                 .add(TOPIC, toBytes("my-topic"))
-                .add(OFFSET, toBytes(10L))
                 .add(DESCRIPTION, toBytes("description"))
                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
