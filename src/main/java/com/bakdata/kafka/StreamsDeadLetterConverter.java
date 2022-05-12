@@ -41,6 +41,8 @@ import org.apache.kafka.common.header.Headers;
 @RequiredArgsConstructor
 class StreamsDeadLetterConverter implements DeadLetterConverter {
 
+    static final String FAULTY_OFFSET_HEADER = "HEADER_PREFIX + offset";
+
     @Override
     public DeadLetter convert(final Object value, final Headers headers) {
         final int partition = getHeader(headers, PARTITION)
@@ -49,8 +51,12 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
         final String topic = getHeader(headers, TOPIC)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(TOPIC));
-        final Optional<Long> offset = getHeader(headers, OFFSET)
-                .map(HeaderHelper::longValue);
+        final long offset = getHeader(headers, OFFSET)
+                // This was a faulty header that has been set in the error handling library.
+                // We support it for backwards compatibility
+                .or(() -> getHeader(headers, FAULTY_OFFSET_HEADER))
+                .map(HeaderHelper::longValue)
+                .orElseThrow(missingRequiredHeader(OFFSET));
         final String description = getHeader(headers, DESCRIPTION)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(DESCRIPTION));
@@ -71,7 +77,7 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
         return DeadLetter.newBuilder()
                 .setPartition(partition)
                 .setTopic(topic)
-                .setOffset(offset.orElse(null))
+                .setOffset(offset)
                 .setInputValue(Optional.ofNullable(value).map(ErrorUtil::toString).orElse(null))
                 .setDescription(description)
                 .setCause(errorDescription)
