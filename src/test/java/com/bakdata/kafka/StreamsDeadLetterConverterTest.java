@@ -32,6 +32,7 @@ import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_STACK_TRACE;
 import static com.bakdata.kafka.ErrorHeaderTransformer.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
+import static com.bakdata.kafka.StreamsDeadLetterConverter.FAULTY_OFFSET_HEADER;
 
 import java.util.stream.Stream;
 import org.apache.kafka.common.header.Headers;
@@ -164,6 +165,24 @@ class StreamsDeadLetterConverterTest {
                     this.softly.assertThat(cause.getStackTrace()).hasValue(StackTraceClassifierTest.STACK_TRACE);
                     this.softly.assertThat(deadLetter.getDescription()).isEqualTo("description");
                 });
+    }
+
+    @Test
+    void shouldConvertFaultyOffsetHeader() {
+        final Headers headers = generateDefaultHeaders()
+                .remove(OFFSET)
+                .add(FAULTY_OFFSET_HEADER, toBytes(100L));
+        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+                .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(100L));
+    }
+
+    @Test
+    void shouldIgnoreFaultyOffsetHeader() {
+        final Headers headers = generateDefaultHeaders()
+                .add(OFFSET, toBytes(10L))
+                .add(FAULTY_OFFSET_HEADER, toBytes(100L));
+        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+                .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(10L));
     }
 
     @ParameterizedTest

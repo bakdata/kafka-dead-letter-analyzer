@@ -41,6 +41,8 @@ import org.apache.kafka.common.header.Headers;
 @RequiredArgsConstructor
 class StreamsDeadLetterConverter implements DeadLetterConverter {
 
+    static final String FAULTY_OFFSET_HEADER = "HEADER_PREFIX + offset";
+
     @Override
     public DeadLetter convert(final Object value, final Headers headers) {
         final int partition = getHeader(headers, PARTITION)
@@ -50,6 +52,9 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(TOPIC));
         final long offset = getHeader(headers, OFFSET)
+                // This was a faulty header that has been set in the error handling library.
+                // We support it for backwards compatibility
+                .or(() -> getHeader(headers, FAULTY_OFFSET_HEADER))
                 .map(HeaderHelper::longValue)
                 .orElseThrow(missingRequiredHeader(OFFSET));
         final String description = getHeader(headers, DESCRIPTION)
