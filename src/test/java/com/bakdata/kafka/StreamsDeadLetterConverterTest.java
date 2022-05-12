@@ -176,6 +176,15 @@ class StreamsDeadLetterConverterTest {
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(100L));
     }
 
+    @Test
+    void shouldIgnoreFaultyOffsetHeader() {
+        final Headers headers = generateDefaultHeaders()
+                .add(OFFSET, toBytes(10L))
+                .add(FAULTY_OFFSET_HEADER, toBytes(100L));
+        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+                .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(10L));
+    }
+
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
