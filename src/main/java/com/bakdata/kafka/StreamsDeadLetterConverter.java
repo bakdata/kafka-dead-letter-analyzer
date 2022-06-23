@@ -33,6 +33,7 @@ import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
 import static com.bakdata.kafka.HeaderHelper.getHeader;
 import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
+import static com.bakdata.kafka.HeaderHelper.stringValue;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -63,9 +64,9 @@ class StreamsDeadLetterConverter implements DeadLetterConverter {
         final String errorClass = getHeader(headers, EXCEPTION_CLASS_NAME)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(EXCEPTION_CLASS_NAME));
-        final String message = getHeader(headers, EXCEPTION_MESSAGE)
-                .flatMap(HeaderHelper::stringValue)
-                .orElseThrow(missingRequiredHeader(EXCEPTION_MESSAGE));
+        final String message = stringValue(getHeader(headers, EXCEPTION_MESSAGE)
+                .orElseThrow(missingRequiredHeader(EXCEPTION_MESSAGE)))
+                .orElse(null);
         final String stackTrace = getHeader(headers, EXCEPTION_STACK_TRACE)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(EXCEPTION_STACK_TRACE));
