@@ -185,6 +185,14 @@ class StreamsDeadLetterConverterTest {
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(10L));
     }
 
+    @Test
+    void shouldConvertNullMessageHeader() {
+        final Headers headers = generateDefaultHeaders()
+                .add(EXCEPTION_MESSAGE, null);
+        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+                .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
+    }
+
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
