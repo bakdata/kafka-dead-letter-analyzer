@@ -24,7 +24,7 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.ConnectDeadLetterConverterTest.toBytes;
+import static com.bakdata.kafka.ConnectDeadLetterParserTest.toBytes;
 import static com.bakdata.kafka.ErrorHeaderTransformer.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_MESSAGE;
@@ -32,7 +32,7 @@ import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_STACK_TRACE;
 import static com.bakdata.kafka.ErrorHeaderTransformer.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
-import static com.bakdata.kafka.StreamsDeadLetterConverter.FAULTY_OFFSET_HEADER;
+import static com.bakdata.kafka.StreamsDeadLetterParser.FAULTY_OFFSET_HEADER;
 
 import java.util.stream.Stream;
 import org.apache.kafka.common.header.Headers;
@@ -47,7 +47,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(SoftAssertionsExtension.class)
-class StreamsDeadLetterConverterTest {
+class StreamsDeadLetterParserTest {
 
     @InjectSoftAssertions
     private SoftAssertions softly;
@@ -152,7 +152,7 @@ class StreamsDeadLetterConverterTest {
                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getInputValue()).hasValue("foo");
                     this.softly.assertThat(deadLetter.getPartition()).hasValue(1);
@@ -172,7 +172,7 @@ class StreamsDeadLetterConverterTest {
         final Headers headers = generateDefaultHeaders()
                 .remove(OFFSET)
                 .add(FAULTY_OFFSET_HEADER, toBytes(100L));
-        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(100L));
     }
 
@@ -181,7 +181,7 @@ class StreamsDeadLetterConverterTest {
         final Headers headers = generateDefaultHeaders()
                 .add(OFFSET, toBytes(10L))
                 .add(FAULTY_OFFSET_HEADER, toBytes(100L));
-        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(10L));
     }
 
@@ -189,14 +189,14 @@ class StreamsDeadLetterConverterTest {
     void shouldConvertNullMessageHeader() {
         final Headers headers = generateDefaultHeaders()
                 .add(EXCEPTION_MESSAGE, null);
-        this.softly.assertThat(new StreamsDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
     }
 
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterParser().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
@@ -204,7 +204,7 @@ class StreamsDeadLetterConverterTest {
     @ParameterizedTest
     @MethodSource("generateNonNullableHeaders")
     void shouldThrowWithNonNullableHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterParser().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }

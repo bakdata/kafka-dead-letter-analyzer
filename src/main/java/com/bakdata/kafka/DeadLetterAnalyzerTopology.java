@@ -131,12 +131,12 @@ class DeadLetterAnalyzerTopology {
         final KStream<Object, Object> rawStreamHeaderDeadLetters = rawDeadLetters
                 .flatTransformValues(() -> new HeaderFilter(EXCEPTION_CLASS_NAME));
         final KStream<Object, DeadLetter> streamHeaderDeadLetters =
-                this.streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterConverter());
+                this.streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser());
 
         final KStream<Object, Object> rawConnectDeadLetters = rawDeadLetters
                 .flatTransformValues(() -> new HeaderFilter(ERROR_HEADER_CONNECTOR_NAME));
         final KStream<Object, DeadLetter> connectDeadLetters =
-                this.streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterConverter());
+                this.streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser());
 
         return streamDeadLetters.merge(connectDeadLetters)
                 .merge(streamHeaderDeadLetters);
@@ -206,10 +206,10 @@ class DeadLetterAnalyzerTopology {
     }
 
     private <K> KStream<K, DeadLetter> streamHeaderDeadLetters(final KStream<K, Object> input,
-            final DeadLetterConverter converterFactory) {
+            final DeadLetterParser converterFactory) {
         final KStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.transformValues(
                 ErrorCapturingValueTransformer.captureErrors(
-                        () -> new DeadLetterConverterTransformer(converterFactory)));
+                        () -> new DeadLetterParserTransformer(converterFactory)));
         final KStream<K, DeadLetter> deadLetters =
                 processedInput.flatMapValues(ProcessedValue::getErrors)
                         .transformValues(
