@@ -24,7 +24,6 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.DeadLetterTransformer.createDeadLetter;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 
@@ -180,7 +179,7 @@ class DeadLetterAnalyzerTopology {
 
         final KStream<ErrorKey, DeadLetter> aggregationDeadLetters =
                 processedAggregations.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(createDeadLetter("Error aggregating dead letters"));
+                        .transformValues(AvroDeadLetterConverter.asTransformer("Error aggregating dead letters"));
         this.toDeadLetterTopic(aggregationDeadLetters);
 
         return processedAggregations.flatMapValues(ProcessedValue::getValues);
@@ -200,7 +199,7 @@ class DeadLetterAnalyzerTopology {
 
         final KStream<K, DeadLetter> analysisDeadLetters =
                 processedDeadLetters.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(createDeadLetter("Error analyzing dead letter"));
+                        .transformValues(AvroDeadLetterConverter.asTransformer("Error analyzing dead letter"));
         this.toDeadLetterTopic(analysisDeadLetters);
 
         return processedDeadLetters.flatMapValues(ProcessedValue::getValues);
@@ -213,7 +212,8 @@ class DeadLetterAnalyzerTopology {
                         () -> new DeadLetterConverterTransformer(converterFactory)));
         final KStream<K, DeadLetter> deadLetters =
                 processedInput.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(createDeadLetter("Error converting errors to dead letters"));
+                        .transformValues(
+                                AvroDeadLetterConverter.asTransformer("Error converting errors to dead letters"));
         this.toDeadLetterTopic(deadLetters);
 
         return processedInput.flatMapValues(ProcessedValue::getValues);
