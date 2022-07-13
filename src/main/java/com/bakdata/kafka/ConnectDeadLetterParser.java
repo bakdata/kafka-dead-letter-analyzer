@@ -42,7 +42,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.header.Headers;
 
 @RequiredArgsConstructor
-class ConnectDeadLetterConverter implements DeadLetterConverter {
+class ConnectDeadLetterParser implements DeadLetterParser {
 
     @Override
     public DeadLetter convert(final Object value, final Headers headers) {

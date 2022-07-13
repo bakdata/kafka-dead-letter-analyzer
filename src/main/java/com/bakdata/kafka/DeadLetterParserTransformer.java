@@ -30,8 +30,8 @@ import org.apache.kafka.streams.kstream.ValueTransformer;
 import org.apache.kafka.streams.processor.ProcessorContext;
 
 @RequiredArgsConstructor
-class DeadLetterConverterTransformer implements ValueTransformer<Object, DeadLetter> {
-    private final @NonNull DeadLetterConverter converter;
+class DeadLetterParserTransformer implements ValueTransformer<Object, DeadLetter> {
+    private final @NonNull DeadLetterParser converter;
     private ProcessorContext context;
 
     @Override

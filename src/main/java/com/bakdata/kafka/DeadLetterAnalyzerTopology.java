@@ -24,7 +24,6 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.DeadLetterTransformer.createDeadLetter;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 
@@ -132,12 +131,12 @@ class DeadLetterAnalyzerTopology {
         final KStream<Object, Object> rawStreamHeaderDeadLetters = rawDeadLetters
                 .flatTransformValues(() -> new HeaderFilter(EXCEPTION_CLASS_NAME));
         final KStream<Object, DeadLetter> streamHeaderDeadLetters =
-                this.streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterConverter());
+                this.streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser());
 
         final KStream<Object, Object> rawConnectDeadLetters = rawDeadLetters
                 .flatTransformValues(() -> new HeaderFilter(ERROR_HEADER_CONNECTOR_NAME));
         final KStream<Object, DeadLetter> connectDeadLetters =
-                this.streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterConverter());
+                this.streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser());
 
         return streamDeadLetters.merge(connectDeadLetters)
                 .merge(streamHeaderDeadLetters);
@@ -180,7 +179,7 @@ class DeadLetterAnalyzerTopology {
 
         final KStream<ErrorKey, DeadLetter> aggregationDeadLetters =
                 processedAggregations.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(createDeadLetter("Error aggregating dead letters"));
+                        .transformValues(AvroDeadLetterConverter.asTransformer("Error aggregating dead letters"));
         this.toDeadLetterTopic(aggregationDeadLetters);
 
         return processedAggregations.flatMapValues(ProcessedValue::getValues);
@@ -200,20 +199,21 @@ class DeadLetterAnalyzerTopology {
 
         final KStream<K, DeadLetter> analysisDeadLetters =
                 processedDeadLetters.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(createDeadLetter("Error analyzing dead letter"));
+                        .transformValues(AvroDeadLetterConverter.asTransformer("Error analyzing dead letter"));
         this.toDeadLetterTopic(analysisDeadLetters);
 
         return processedDeadLetters.flatMapValues(ProcessedValue::getValues);
     }
 
     private <K> KStream<K, DeadLetter> streamHeaderDeadLetters(final KStream<K, Object> input,
-            final DeadLetterConverter converterFactory) {
+            final DeadLetterParser converterFactory) {
         final KStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.transformValues(
                 ErrorCapturingValueTransformer.captureErrors(
-                        () -> new DeadLetterConverterTransformer(converterFactory)));
+                        () -> new DeadLetterParserTransformer(converterFactory)));
         final KStream<K, DeadLetter> deadLetters =
                 processedInput.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(createDeadLetter("Error converting errors to dead letters"));
+                        .transformValues(
+                                AvroDeadLetterConverter.asTransformer("Error converting errors to dead letters"));
         this.toDeadLetterTopic(deadLetters);
 
         return processedInput.flatMapValues(ProcessedValue::getValues);

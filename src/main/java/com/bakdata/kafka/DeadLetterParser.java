@@ -27,7 +27,7 @@ package com.bakdata.kafka;
 import org.apache.kafka.common.header.Headers;
 
 @FunctionalInterface
-interface DeadLetterConverter {
+interface DeadLetterParser {
 
     /**
      * Create a {@link DeadLetter} from any value and associated headers.

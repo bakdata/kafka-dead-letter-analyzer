@@ -24,7 +24,7 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.ConnectDeadLetterConverterTest.toBytes;
+import static com.bakdata.kafka.ConnectDeadLetterParserTest.toBytes;
 import static com.bakdata.kafka.ErrorHeaderTransformer.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_MESSAGE;

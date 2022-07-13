@@ -40,7 +40,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.header.Headers;
 
 @RequiredArgsConstructor
-class StreamsDeadLetterConverter implements DeadLetterConverter {
+class StreamsDeadLetterParser implements DeadLetterParser {
 
     static final String FAULTY_OFFSET_HEADER = "HEADER_PREFIX + offset";
 

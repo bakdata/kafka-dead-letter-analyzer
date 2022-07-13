@@ -49,7 +49,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(SoftAssertionsExtension.class)
-class ConnectDeadLetterConverterTest {
+class ConnectDeadLetterParserTest {
 
     @InjectSoftAssertions
     private SoftAssertions softly;
@@ -140,7 +140,7 @@ class ConnectDeadLetterConverterTest {
                 .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector"))
                 .add(ERROR_HEADER_EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(ERROR_HEADER_EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        this.softly.assertThat(new ConnectDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getInputValue()).hasValue("foo");
                     this.softly.assertThat(deadLetter.getPartition()).hasValue(1);
@@ -160,7 +160,7 @@ class ConnectDeadLetterConverterTest {
     @Test
     void shouldConvertWithMissingHeaders() {
         final Headers headers = generateDefaultHeaders();
-        this.softly.assertThat(new ConnectDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getPartition()).isNotPresent();
                     this.softly.assertThat(deadLetter.getTopic()).isNotPresent();
@@ -176,14 +176,14 @@ class ConnectDeadLetterConverterTest {
     void shouldConvertWithNullHeaders() {
         final Headers headers = generateDefaultHeaders()
                 .add(ERROR_HEADER_EXCEPTION_MESSAGE, null);
-        this.softly.assertThat(new ConnectDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
     }
 
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterParser().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
@@ -191,7 +191,7 @@ class ConnectDeadLetterConverterTest {
     @ParameterizedTest
     @MethodSource("generateNonNullableHeaders")
     void shouldThrowWithNonNullableHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterConverter().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterParser().convert("foo", headers))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
