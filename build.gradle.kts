@@ -56,11 +56,11 @@ dependencies {
     implementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    api(group = "com.bakdata.kafka", name = "streams-bootstrap", version = "2.1.0")
-    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.1.1")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.3.0")
+    api(group = "com.bakdata.kafka", name = "streams-bootstrap", version = "2.2.0")
+    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.2.0")
+    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.4.0")
     implementation(group = "org.jooq", name = "jool", version = "0.9.14")
-    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.2.6-SNAPSHOT")
+    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.3.0")
 
     val junitVersion = "5.7.2"
     testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = junitVersion)
@@ -69,7 +69,7 @@ dependencies {
     testImplementation(
         group = "com.bakdata.fluent-kafka-streams-tests",
         name = "fluent-kafka-streams-tests-junit5",
-        version = "2.5.3"
+        version = "2.6.0"
     )
     testImplementation(group = "org.assertj", name = "assertj-core", version = "3.20.2")
 }
