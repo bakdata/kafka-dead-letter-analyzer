@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2023 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -129,12 +129,12 @@ class DeadLetterAnalyzerTopology {
                 .flatMapValues(DeadLetterAnalyzerTopology::getDeadLetters);
 
         final KStream<Object, Object> rawStreamHeaderDeadLetters = rawDeadLetters
-                .flatTransformValues(() -> new HeaderFilter(EXCEPTION_CLASS_NAME));
+                .processValues(() -> new HeaderFilter<>(EXCEPTION_CLASS_NAME));
         final KStream<Object, DeadLetter> streamHeaderDeadLetters =
                 this.streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser());
 
         final KStream<Object, Object> rawConnectDeadLetters = rawDeadLetters
-                .flatTransformValues(() -> new HeaderFilter(ERROR_HEADER_CONNECTOR_NAME));
+                .processValues(() -> new HeaderFilter<>(ERROR_HEADER_CONNECTOR_NAME));
         final KStream<Object, DeadLetter> connectDeadLetters =
                 this.streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser());
 
@@ -163,6 +163,7 @@ class DeadLetterAnalyzerTopology {
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KStream<ErrorKey, ProcessedValue<DeadLetterWithContext, Result>> processedAggregations = analyzed
                 .repartition(Repartitioned.with(errorKeySerde, null))
+                //FIXME FixedKeyProcessors are not able to use StateStores in 3.3.1
                 .transformValues(ErrorCapturingValueTransformerWithKey.captureErrors(
                         new ValueTransformerWithKeySupplier<>() {
                             @Override
@@ -179,7 +180,7 @@ class DeadLetterAnalyzerTopology {
 
         final KStream<ErrorKey, DeadLetter> aggregationDeadLetters =
                 processedAggregations.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(AvroDeadLetterConverter.asTransformer("Error aggregating dead letters"));
+                        .processValues(AvroDeadLetterConverter.asProcessor("Error aggregating dead letters"));
         this.toDeadLetterTopic(aggregationDeadLetters);
 
         return processedAggregations.flatMapValues(ProcessedValue::getValues);
@@ -194,12 +195,12 @@ class DeadLetterAnalyzerTopology {
     private <K> KStream<K, KeyedDeadLetterWithContext> enrichWithContext(
             final KStream<K, ? extends DeadLetter> allDeadLetters) {
         final KStream<K, ProcessedValue<DeadLetter, KeyedDeadLetterWithContext>> processedDeadLetters =
-                allDeadLetters.transformValues(
-                        ErrorCapturingValueTransformerWithKey.captureErrors(ContextEnricher::new));
+                allDeadLetters.processValues(
+                        ErrorCapturingValueProcessor.captureErrors(ContextEnricher::new));
 
         final KStream<K, DeadLetter> analysisDeadLetters =
                 processedDeadLetters.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(AvroDeadLetterConverter.asTransformer("Error analyzing dead letter"));
+                        .processValues(AvroDeadLetterConverter.asProcessor("Error analyzing dead letter"));
         this.toDeadLetterTopic(analysisDeadLetters);
 
         return processedDeadLetters.flatMapValues(ProcessedValue::getValues);
@@ -207,13 +208,13 @@ class DeadLetterAnalyzerTopology {
 
     private <K> KStream<K, DeadLetter> streamHeaderDeadLetters(final KStream<K, Object> input,
             final DeadLetterParser converterFactory) {
-        final KStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.transformValues(
-                ErrorCapturingValueTransformer.captureErrors(
-                        () -> new DeadLetterParserTransformer(converterFactory)));
+        final KStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.processValues(
+                ErrorCapturingValueProcessor.captureErrors(
+                        () -> new DeadLetterParserTransformer<>(converterFactory)));
         final KStream<K, DeadLetter> deadLetters =
                 processedInput.flatMapValues(ProcessedValue::getErrors)
-                        .transformValues(
-                                AvroDeadLetterConverter.asTransformer("Error converting errors to dead letters"));
+                        .processValues(
+                                AvroDeadLetterConverter.asProcessor("Error converting errors to dead letters"));
         this.toDeadLetterTopic(deadLetters);
 
         return processedInput.flatMapValues(ProcessedValue::getValues);

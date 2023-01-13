@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2023 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,22 +26,24 @@ package com.bakdata.kafka;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.streams.kstream.ValueTransformer;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 
 @RequiredArgsConstructor
-class DeadLetterParserTransformer implements ValueTransformer<Object, DeadLetter> {
+class DeadLetterParserTransformer<K> implements FixedKeyProcessor<K, Object, DeadLetter> {
     private final @NonNull DeadLetterParser converter;
-    private ProcessorContext context;
+    private FixedKeyProcessorContext<K, DeadLetter> context;
 
     @Override
-    public void init(final ProcessorContext context) {
+    public void init(final FixedKeyProcessorContext<K, DeadLetter> context) {
         this.context = context;
     }
 
     @Override
-    public DeadLetter transform(final Object object) {
-        return this.converter.convert(object, this.context.headers());
+    public void process(final FixedKeyRecord<K, Object> inputRecord) {
+        final DeadLetter deadLetter = this.converter.convert(inputRecord.value(), inputRecord.headers());
+        this.context.forward(inputRecord.withValue(deadLetter));
     }
 
     @Override

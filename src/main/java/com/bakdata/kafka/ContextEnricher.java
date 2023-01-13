@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2023 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,14 @@ package com.bakdata.kafka;
 
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.streams.kstream.ValueTransformerWithKey;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyRecord;
+import org.apache.kafka.streams.processor.api.RecordMetadata;
 
 @RequiredArgsConstructor
-class ContextEnricher implements ValueTransformerWithKey<Object, DeadLetter, KeyedDeadLetterWithContext> {
-    private ProcessorContext context;
+class ContextEnricher implements FixedKeyProcessor<Object, DeadLetter, KeyedDeadLetterWithContext> {
+    private FixedKeyProcessorContext<Object, KeyedDeadLetterWithContext> context;
 
     private static String extractType(final DeadLetter value) {
         final String stackTrace = value.getCause().getStackTrace().orElseThrow();
@@ -39,30 +41,35 @@ class ContextEnricher implements ValueTransformerWithKey<Object, DeadLetter, Key
     }
 
     @Override
-    public void init(final ProcessorContext context) {
+    public void init(final FixedKeyProcessorContext<Object, KeyedDeadLetterWithContext> context) {
         this.context = context;
     }
 
     @Override
-    public KeyedDeadLetterWithContext transform(final Object key, final DeadLetter deadLetter) {
+    public void process(final FixedKeyRecord<Object, DeadLetter> inputRecord) {
+        final Object key = inputRecord.key();
+        final DeadLetter deadLetter = inputRecord.value();
+        final RecordMetadata recordMetadata =
+                this.context.recordMetadata().orElseThrow(() -> new IllegalArgumentException("No metadata available"));
         final Context deadLetterContext = Context.newBuilder()
                 .setKey(ErrorUtil.toString(key))
-                .setOffset(this.context.offset())
-                .setPartition(this.context.partition())
-                .setTimestamp(Instant.ofEpochMilli(this.context.timestamp()))
+                .setOffset(recordMetadata.offset())
+                .setPartition(recordMetadata.partition())
+                .setTimestamp(Instant.ofEpochMilli(inputRecord.timestamp()))
                 .build();
         final DeadLetterWithContext deadLetterWithContext = DeadLetterWithContext.newBuilder()
                 .setContext(deadLetterContext)
                 .setDeadLetter(deadLetter)
                 .build();
         final ErrorKey errorKey = ErrorKey.newBuilder()
-                .setTopic(this.context.topic())
+                .setTopic(recordMetadata.topic())
                 .setType(extractType(deadLetter))
                 .build();
-        return KeyedDeadLetterWithContext.builder()
+        final KeyedDeadLetterWithContext keyedDeadLetterWithContext = KeyedDeadLetterWithContext.builder()
                 .value(deadLetterWithContext)
                 .key(errorKey)
                 .build();
+        this.context.forward(inputRecord.withValue(keyedDeadLetterWithContext));
     }
 
     @Override

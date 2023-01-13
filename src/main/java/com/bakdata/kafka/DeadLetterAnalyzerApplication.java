@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2023 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
     private static final String STATS_TOPIC_ROLE = "stats";
 
     public static void main(final String[] args) {
-        KafkaStreamsApplication.startApplication(new DeadLetterAnalyzerApplication(), args);
+        startApplication(new DeadLetterAnalyzerApplication(), args);
     }
 
     @Override
