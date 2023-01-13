@@ -54,8 +54,8 @@ import org.apache.kafka.streams.state.Stores;
 @Builder
 @Getter
 class DeadLetterAnalyzerTopology {
+    static final String REPARTITION_NAME = "analyzed";
     private static final String STATISTICS_STORE_NAME = "statistics";
-    public static final String REPARTITION_NAME = "analyzed";
     private final @NonNull Pattern inputPattern;
     private final @NonNull String outputTopic;
     private final @NonNull String statsTopic;
