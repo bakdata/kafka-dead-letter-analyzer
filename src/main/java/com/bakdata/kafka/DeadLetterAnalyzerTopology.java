@@ -162,7 +162,7 @@ class DeadLetterAnalyzerTopology {
         final KStream<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KStream<ErrorKey, ProcessedValue<DeadLetterWithContext, Result>> processedAggregations = analyzed
-                .repartition(Repartitioned.with(errorKeySerde, null))
+                .repartition(Repartitioned.<ErrorKey, DeadLetterWithContext>as("analyzed").withKeySerde(errorKeySerde))
                 //FIXME FixedKeyProcessors are not able to use StateStores in 3.3.1
                 .transformValues(ErrorCapturingValueTransformerWithKey.captureErrors(
                         new ValueTransformerWithKeySupplier<>() {
