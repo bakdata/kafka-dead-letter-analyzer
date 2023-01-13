@@ -94,7 +94,7 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
     }
 
     private String getRepartitionTopic() {
-        return this.getUniqueAppId() + REPARTITION_NAME + "-repartition";
+        return String.format("%s-%s-repartition", this.getUniqueAppId(), REPARTITION_NAME);
     }
 
     private String getStatsTopic() {
