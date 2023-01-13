@@ -24,6 +24,8 @@
 
 package com.bakdata.kafka;
 
+import static com.bakdata.kafka.DeadLetterAnalyzerTopology.REPARTITION_NAME;
+
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.Properties;
 import lombok.Setter;
@@ -87,7 +89,12 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
             storingClient.deleteAllFiles(this.getOutputTopic());
             storingClient.deleteAllFiles(this.getErrorTopic());
             storingClient.deleteAllFiles(this.getExamplesTopic());
+            storingClient.deleteAllFiles(this.getRepartitionTopic());
         }
+    }
+
+    private String getRepartitionTopic() {
+        return this.getUniqueAppId() + REPARTITION_NAME + "-repartition";
     }
 
     private String getStatsTopic() {

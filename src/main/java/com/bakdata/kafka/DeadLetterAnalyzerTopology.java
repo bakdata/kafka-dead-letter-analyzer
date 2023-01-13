@@ -55,6 +55,7 @@ import org.apache.kafka.streams.state.Stores;
 @Getter
 class DeadLetterAnalyzerTopology {
     private static final String STATISTICS_STORE_NAME = "statistics";
+    public static final String REPARTITION_NAME = "analyzed";
     private final @NonNull Pattern inputPattern;
     private final @NonNull String outputTopic;
     private final @NonNull String statsTopic;
@@ -162,7 +163,8 @@ class DeadLetterAnalyzerTopology {
         final KStream<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KStream<ErrorKey, ProcessedValue<DeadLetterWithContext, Result>> processedAggregations = analyzed
-                .repartition(Repartitioned.<ErrorKey, DeadLetterWithContext>as("analyzed").withKeySerde(errorKeySerde))
+                .repartition(
+                        Repartitioned.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME).withKeySerde(errorKeySerde))
                 //FIXME FixedKeyProcessors are not able to use StateStores in 3.3.1
                 .transformValues(ErrorCapturingValueTransformerWithKey.captureErrors(
                         new ValueTransformerWithKeySupplier<>() {
