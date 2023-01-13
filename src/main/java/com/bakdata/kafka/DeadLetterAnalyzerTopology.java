@@ -24,7 +24,7 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
+import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
