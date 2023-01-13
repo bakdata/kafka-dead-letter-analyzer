@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2023 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,34 +24,28 @@
 
 package com.bakdata.kafka;
 
-import java.util.ArrayList;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
-import org.apache.kafka.streams.kstream.ValueTransformer;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 
 @RequiredArgsConstructor
-class HeaderFilter implements ValueTransformer<Object, Iterable<Object>> {
+class HeaderFilter<K, V> implements FixedKeyProcessor<K, V, V> {
     private final String requiredHeader;
-    private ProcessorContext context;
-
-    private static List<Object> newList(final Object value) {
-        //List.of does not allow null values
-        final List<Object> list = new ArrayList<>();
-        list.add(value);
-        return list;
-    }
+    private FixedKeyProcessorContext<K, V> context;
 
     @Override
-    public void init(final ProcessorContext context) {
+    public void init(final FixedKeyProcessorContext<K, V> context) {
         this.context = context;
     }
 
     @Override
-    public Iterable<Object> transform(final Object value) {
-        return this.hasHeader() ? newList(value) : List.of();
+    public void process(final FixedKeyRecord<K, V> inputRecord) {
+        if (this.hasHeader(inputRecord)) {
+            this.context.forward(inputRecord);
+        }
     }
 
     @Override
@@ -59,8 +53,8 @@ class HeaderFilter implements ValueTransformer<Object, Iterable<Object>> {
         // do nothing
     }
 
-    private boolean hasHeader() {
-        final Headers headers = this.context.headers();
+    private boolean hasHeader(final FixedKeyRecord<K, V> inputRecord) {
+        final Headers headers = inputRecord.headers();
         return this.hasHeader(headers);
     }
 

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2023 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,9 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class StackTraceClassifier {
     private static final Pattern LINE =
-            Pattern.compile("(?:\n|^)\tat ([._a-zA-Z0-9]+\\([_a-zA-Z0-9]+.java:\\d+\\))(?:\n|$)");
-    private static final Pattern EXCEPTION = Pattern.compile("^([._a-zA-Z0-9$]+).*");
-    public static final Splitter NEW_LINE_SPLITTER = Splitter.on("\n");
+            Pattern.compile("(?:\n|^)\tat ([.\\w]+\\(\\w+.java:\\d+\\))(?:\n|$)");
+    private static final Pattern EXCEPTION = Pattern.compile("^([.\\w$]+).*");
+    private static final Splitter NEW_LINE_SPLITTER = Splitter.on("\n");
 
     static String classify(final String stackTrace) {
         return extractLine(stackTrace)
