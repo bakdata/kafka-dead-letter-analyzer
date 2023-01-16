@@ -24,7 +24,7 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
+import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
@@ -54,6 +54,7 @@ import org.apache.kafka.streams.state.Stores;
 @Builder
 @Getter
 class DeadLetterAnalyzerTopology {
+    static final String REPARTITION_NAME = "analyzed";
     private static final String STATISTICS_STORE_NAME = "statistics";
     private final @NonNull Pattern inputPattern;
     private final @NonNull String outputTopic;
@@ -162,7 +163,8 @@ class DeadLetterAnalyzerTopology {
         final KStream<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KStream<ErrorKey, ProcessedValue<DeadLetterWithContext, Result>> processedAggregations = analyzed
-                .repartition(Repartitioned.with(errorKeySerde, null))
+                .repartition(
+                        Repartitioned.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME).withKeySerde(errorKeySerde))
                 //FIXME FixedKeyProcessors are not able to use StateStores in 3.3.1
                 .transformValues(ErrorCapturingValueTransformerWithKey.captureErrors(
                         new ValueTransformerWithKeySupplier<>() {

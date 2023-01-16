@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2023 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,13 +25,13 @@
 package com.bakdata.kafka;
 
 import static com.bakdata.kafka.ConnectDeadLetterParserTest.toBytes;
-import static com.bakdata.kafka.ErrorHeaderTransformer.DESCRIPTION;
-import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_CLASS_NAME;
-import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_MESSAGE;
-import static com.bakdata.kafka.ErrorHeaderTransformer.EXCEPTION_STACK_TRACE;
-import static com.bakdata.kafka.ErrorHeaderTransformer.OFFSET;
-import static com.bakdata.kafka.ErrorHeaderTransformer.PARTITION;
-import static com.bakdata.kafka.ErrorHeaderTransformer.TOPIC;
+import static com.bakdata.kafka.ErrorHeaderProcessor.DESCRIPTION;
+import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
+import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_MESSAGE;
+import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_STACK_TRACE;
+import static com.bakdata.kafka.ErrorHeaderProcessor.OFFSET;
+import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
+import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
 import static com.bakdata.kafka.StreamsDeadLetterParser.FAULTY_OFFSET_HEADER;
 
 import java.util.stream.Stream;
