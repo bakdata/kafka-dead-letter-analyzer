@@ -26,7 +26,7 @@ resources:
 jobs:
 - template: azure/gradle/build.yml@templates
   parameters:
-    jdkVersion: '1.17'
+    #jdkVersion: '1.17'
     docker: 'true'
 - template: azure/gradle/create_tag_version.yml@templates
 - template: azure/gradle/upload_release.yml@templates
