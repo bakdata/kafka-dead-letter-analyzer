@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 bakdata
+ * Copyright (c) 2024 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,6 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.DeadLetterAnalyzerTopology.REPARTITION_NAME;
-
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.Properties;
 import lombok.Setter;
@@ -41,7 +39,7 @@ import org.apache.kafka.streams.StreamsConfig;
 @Slf4j
 @ToString(callSuper = true)
 @Setter
-public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication {
+public final class DeadLetterAnalyzerApplication extends LargeMessageKafkaStreamsApplication {
 
     private static final String EXAMPLES_TOPIC_ROLE = "examples";
     private static final String STATS_TOPIC_ROLE = "stats";
@@ -76,25 +74,6 @@ public final class DeadLetterAnalyzerApplication extends KafkaStreamsApplication
     @Override
     public String getUniqueAppId() {
         return "dead-letter-analyzer-" + this.getOutputTopic();
-    }
-
-    @Override
-    protected void cleanUpRun(final CleanUpRunner cleanUpRunner) {
-        super.cleanUpRun(cleanUpRunner);
-
-        if (this.isDeleteOutputTopic()) {
-            final Properties kafkaProperties = this.getKafkaProperties();
-            final AbstractLargeMessageConfig largeMessageConfig = new AbstractLargeMessageConfig(kafkaProperties);
-            final LargeMessageStoringClient storingClient = largeMessageConfig.getStorer();
-            storingClient.deleteAllFiles(this.getOutputTopic());
-            storingClient.deleteAllFiles(this.getErrorTopic());
-            storingClient.deleteAllFiles(this.getExamplesTopic());
-            storingClient.deleteAllFiles(this.getRepartitionTopic());
-        }
-    }
-
-    private String getRepartitionTopic() {
-        return String.format("%s-%s-repartition", this.getUniqueAppId(), REPARTITION_NAME);
     }
 
     private String getStatsTopic() {

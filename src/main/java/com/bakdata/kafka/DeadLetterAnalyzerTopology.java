@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 bakdata
+ * Copyright (c) 2024 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -44,8 +44,8 @@ import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.Repartitioned;
-import org.apache.kafka.streams.kstream.ValueTransformerWithKey;
-import org.apache.kafka.streams.kstream.ValueTransformerWithKeySupplier;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorSupplier;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
@@ -165,12 +165,11 @@ class DeadLetterAnalyzerTopology {
         final KStream<ErrorKey, ProcessedValue<DeadLetterWithContext, Result>> processedAggregations = analyzed
                 .repartition(
                         Repartitioned.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME).withKeySerde(errorKeySerde))
-                //FIXME FixedKeyProcessors are not able to use StateStores in 3.3.1
-                .transformValues(ErrorCapturingValueTransformerWithKey.captureErrors(
-                        new ValueTransformerWithKeySupplier<>() {
+                .processValues(ErrorCapturingValueProcessor.captureErrors(
+                        new FixedKeyProcessorSupplier<>() {
                             @Override
-                            public ValueTransformerWithKey<ErrorKey, DeadLetterWithContext, Result> get() {
-                                return new ErrorAggregatingTransformer(statisticsStore.name());
+                            public FixedKeyProcessor<ErrorKey, DeadLetterWithContext, Result> get() {
+                                return new ErrorAggregatingProcessor(statisticsStore.name());
                             }
 
                             @Override
