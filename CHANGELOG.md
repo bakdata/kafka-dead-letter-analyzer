@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.2.0) (2024-01-17)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.1.0...1.2.0)
+
+**Merged pull requests:**
+
+- Upgrade to Kafka 3.5 [\#11](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/11) ([@philipp94831](https://github.com/philipp94831))
+
 ## [1.1.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.1.0) (2023-01-16)
 [View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.0.2...1.1.0)
 
@@ -20,7 +27,7 @@
 **Merged pull requests:**
 
 - Support exceptions with null message [\#5](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/5) ([@philipp94831](https://github.com/philipp94831))
-- Fix azure pipelines default branch name [\#3](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/3) ([@jakob-ed](https://github.com/jakob-ed))
+- Fix azure pipelines default branch name [\#3](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/3) ([@JakobEdding](https://github.com/JakobEdding))
 
 ## [1.0.1](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.0.1) (2022-05-12)
 [View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.0.0...1.0.1)

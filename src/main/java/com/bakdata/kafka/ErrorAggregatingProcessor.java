@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 bakdata
+ * Copyright (c) 2024 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,18 @@ import java.time.Instant;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.streams.kstream.ValueTransformerWithKey;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
+import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext;
+import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.jooq.lambda.Seq;
 
 @RequiredArgsConstructor
-class ErrorAggregatingTransformer
-        implements ValueTransformerWithKey<ErrorKey, DeadLetterWithContext, Result> {
+class ErrorAggregatingProcessor
+        implements FixedKeyProcessor<ErrorKey, DeadLetterWithContext, Result> {
     private final @NonNull String storeName;
     private KeyValueStore<ErrorKey, ErrorStatistics> statisticsStore;
+    private FixedKeyProcessorContext<ErrorKey, Result> context;
 
     private static Result updatedResult(final ErrorStatistics oldStatistics, final ErrorStatistics newStatistics) {
         final ErrorStatistics updatedStatistics = merge(oldStatistics, newStatistics);
@@ -72,18 +74,21 @@ class ErrorAggregatingTransformer
     }
 
     @Override
-    public void init(final ProcessorContext context) {
+    public void init(final FixedKeyProcessorContext<ErrorKey, Result> context) {
         this.statisticsStore = context.getStateStore(this.storeName);
+        this.context = context;
     }
 
     @Override
-    public Result transform(final ErrorKey key, final DeadLetterWithContext deadLetterWithContext) {
+    public void process(final FixedKeyRecord<ErrorKey, DeadLetterWithContext> record) {
+        final ErrorKey key = record.key();
+        final DeadLetterWithContext deadLetterWithContext = record.value();
         final ErrorStatistics newStatistics = newStatistics(deadLetterWithContext);
         final Result result = this.getStatistics(key)
                 .map(oldStatistics -> updatedResult(oldStatistics, newStatistics))
                 .orElseGet(() -> newResult(deadLetterWithContext, newStatistics));
         this.statisticsStore.put(key, result.getStatistics());
-        return result;
+        this.context.forward(record.withValue(result));
     }
 
     @Override

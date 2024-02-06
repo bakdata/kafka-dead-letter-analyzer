@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 bakdata
+ * Copyright (c) 2024 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -76,7 +76,9 @@ class DeadLetterAnalyzerTopologyTest {
     private DeadLetterAnalyzerTopology app;
     @RegisterExtension
     TestTopologyExtension<String, DeadLetter> topology =
-            new TestTopologyExtension<>(this::createTopology, new DeadLetterAnalyzerApplication().getKafkaProperties());
+            new TestTopologyExtension<>(this::createTopology,
+                    StreamsBootstrapTopologyFactory.getKafkaPropertiesWithSchemaRegistryUrl(
+                            new DeadLetterAnalyzerApplication()));
     @InjectSoftAssertions
     private SoftAssertions softly;
 

@@ -3,12 +3,12 @@ description = "Kafka Streams application that analyzes dead letters in your Kafk
 plugins {
     `java-library`
     id("net.researchgate.release") version "3.0.2"
-    id("com.bakdata.sonar") version "1.1.7"
-    id("com.bakdata.sonatype") version "1.1.7"
+    id("com.bakdata.sonar") version "1.1.11"
+    id("com.bakdata.sonatype") version "1.1.11"
     id("org.hildan.github.changelog") version "1.12.1"
-    id("io.freefair.lombok") version "6.6.1"
-    id("com.google.cloud.tools.jib") version "3.3.1"
-    id("com.bakdata.avro") version "1.1.0"
+    id("io.freefair.lombok") version "6.6.3"
+    id("com.google.cloud.tools.jib") version "3.4.0"
+    id("com.bakdata.avro") version "1.3.1"
 }
 
 allprojects {
@@ -53,22 +53,19 @@ dependencies {
     implementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    api(group = "com.bakdata.kafka", name = "streams-bootstrap", version = "2.7.0")
-    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.2.0")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.5.1")
+    val streamsBootstrapVersion = "2.15.3"
+    api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages", version = streamsBootstrapVersion)
+    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.2.1")
+    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.6.0")
     implementation(group = "org.jooq", name = "jool", version = "0.9.14")
-    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.4.1")
+    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.4.2")
 
-    val junitVersion = "5.9.1"
+    val junitVersion = "5.10.1"
     testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = junitVersion)
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = junitVersion)
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = junitVersion)
-    testImplementation(
-        group = "com.bakdata.fluent-kafka-streams-tests",
-        name = "fluent-kafka-streams-tests-junit5",
-        version = "2.8.1"
-    )
-    testImplementation(group = "org.assertj", name = "assertj-core", version = "3.23.1")
+    testImplementation(group = "com.bakdata.kafka", name = "streams-bootstrap-test", version = streamsBootstrapVersion)
+    testImplementation(group = "org.assertj", name = "assertj-core", version = "3.25.1")
 }
 
 avro {
