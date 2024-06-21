@@ -2,12 +2,11 @@ description = "Kafka Streams application that analyzes dead letters in your Kafk
 
 plugins {
     `java-library`
-    id("net.researchgate.release") version "3.0.2"
-    id("com.bakdata.sonar") version "1.1.17"
-    id("com.bakdata.sonatype") version "1.1.14"
-    id("org.hildan.github.changelog") version "2.2.0"
+    id("com.bakdata.release") version "1.4.0"
+    id("com.bakdata.sonar") version "1.4.0"
+    id("com.bakdata.sonatype") version "1.4.0"
     id("io.freefair.lombok") version "8.4"
-    id("com.google.cloud.tools.jib") version "3.4.0"
+    id("com.google.cloud.tools.jib") version "3.4.3"
     id("com.bakdata.avro") version "1.3.1"
 }
 
@@ -27,7 +26,7 @@ allprojects {
 
 configure<JavaPluginExtension> {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
@@ -40,12 +39,6 @@ configure<com.bakdata.gradle.SonatypeSettings> {
     }
 }
 
-configure<org.hildan.github.changelog.plugin.GitHubChangelogExtension> {
-    githubUser = "bakdata"
-    githubRepository = "kafka-dead-letter-analyzer"
-    futureVersionTag = findProperty("changelog.releaseVersion")?.toString()
-    sinceTag = findProperty("changelog.sinceTag")?.toString()
-}
 
 dependencies {
     val confluentVersion: String by project
@@ -54,10 +47,10 @@ dependencies {
     implementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    val streamsBootstrapVersion = "2.15.3"
+    val streamsBootstrapVersion = "2.23.0"
     api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages", version = streamsBootstrapVersion)
     implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.2.1")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.6.0")
+    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.7.0")
     implementation(group = "org.jooq", name = "jool", version = "0.9.14")
     avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.4.2")
 
