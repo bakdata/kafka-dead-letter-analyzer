@@ -29,6 +29,7 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_MESSAGE;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_STACK_TRACE;
+import static com.bakdata.kafka.ErrorHeaderProcessor.INPUT_TIMESTAMP;
 import static com.bakdata.kafka.ErrorHeaderProcessor.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
@@ -118,6 +119,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
                 .setDescription("description")
+                .setInputTimestamp(Instant.ofEpochMilli(200L))
                 .build();
         final long timestamp = 0L;
         input.add("key", deadLetter, timestamp);
@@ -180,6 +182,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
                 .setDescription("description")
+                .setInputTimestamp(Instant.ofEpochMilli(200L))
                 .build();
         final long firstTimestamp = 0L;
         input.add("key", firstDeadLetter, firstTimestamp);
@@ -239,6 +242,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
                 .setDescription("description")
+                .setInputTimestamp(Instant.ofEpochMilli(200L))
                 .build();
         final long firstTimestamp = 0L;
         input.add("key", firstDeadLetter, firstTimestamp);
@@ -300,6 +304,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setStackTrace(null)
                         .build())
                 .setDescription("description")
+                .setInputTimestamp(Instant.ofEpochMilli(200L))
                 .build();
 
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
@@ -388,7 +393,9 @@ class DeadLetterAnalyzerTopologyTest {
                 .setPartition(1)
                 .setTopic("my-topic")
                 .setOffset(10L)
+                .setInputTimestamp(Instant.ofEpochMilli(firstTimestamp))
                 .build();
+
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
                 .anySatisfy(record -> {
@@ -453,7 +460,9 @@ class DeadLetterAnalyzerTopologyTest {
                 .add(DESCRIPTION, toBytes("description"))
                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
-                .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
+                .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE))
+                .add(INPUT_TIMESTAMP, toBytes(200L));
+
         input.add("key", "value", 0L, headers);
 
         final DeadLetter expectedDeadLetter = DeadLetter.newBuilder()
@@ -467,7 +476,9 @@ class DeadLetterAnalyzerTopologyTest {
                 .setPartition(1)
                 .setTopic("my-topic")
                 .setOffset(10L)
+                .setInputTimestamp(Instant.ofEpochMilli(200L))
                 .build();
+
         this.softly.assertThat(seq(processedDeadLetters).toList())
                 .hasSize(1)
                 .anySatisfy(record -> {
@@ -531,6 +542,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
                 .setDescription("description")
+                .setInputTimestamp(Instant.ofEpochMilli(200L))
                 .build();
         input.add(TestRecord.newBuilder().setId(1).build(), firstDeadLetter);
         this.softly.assertThat(seq(processedDeadLetters).toList())

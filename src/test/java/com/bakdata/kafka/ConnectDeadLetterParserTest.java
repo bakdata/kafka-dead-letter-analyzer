@@ -36,6 +36,7 @@ import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ER
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_TASK_ID;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.stream.Stream;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -140,7 +141,8 @@ class ConnectDeadLetterParserTest {
                 .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector"))
                 .add(ERROR_HEADER_EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(ERROR_HEADER_EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers))
+
+        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers, 200))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getInputValue()).hasValue("foo");
                     this.softly.assertThat(deadLetter.getPartition()).hasValue(1);
@@ -154,13 +156,14 @@ class ConnectDeadLetterParserTest {
                     this.softly.assertThat(deadLetter.getDescription())
                             .isEqualTo("Error in stage VALUE_CONVERTER (org.apache.kafka.connect.json.JsonConverter) "
                                     + "in my-connector[2]");
+                    this.softly.assertThat(deadLetter.getInputTimestamp()).hasValue(Instant.ofEpochMilli(200));
                 });
     }
 
     @Test
     void shouldConvertWithMissingHeaders() {
         final Headers headers = generateDefaultHeaders();
-        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers))
+        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers, 0))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getPartition()).isNotPresent();
                     this.softly.assertThat(deadLetter.getTopic()).isNotPresent();
@@ -176,14 +179,14 @@ class ConnectDeadLetterParserTest {
     void shouldConvertWithNullHeaders() {
         final Headers headers = generateDefaultHeaders()
                 .add(ERROR_HEADER_EXCEPTION_MESSAGE, null);
-        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers))
+        this.softly.assertThat(new ConnectDeadLetterParser().convert("foo", headers, 0))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
     }
 
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterParser().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterParser().convert("foo", headers, 0))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
@@ -191,7 +194,7 @@ class ConnectDeadLetterParserTest {
     @ParameterizedTest
     @MethodSource("generateNonNullableHeaders")
     void shouldThrowWithNonNullableHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterParser().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new ConnectDeadLetterParser().convert("foo", headers, 0))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }

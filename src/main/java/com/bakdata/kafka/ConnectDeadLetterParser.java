@@ -37,6 +37,7 @@ import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ER
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_STAGE;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_TASK_ID;
 
+import java.time.Instant;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.header.Headers;
@@ -45,7 +46,7 @@ import org.apache.kafka.common.header.Headers;
 class ConnectDeadLetterParser implements DeadLetterParser {
 
     @Override
-    public DeadLetter convert(final Object value, final Headers headers) {
+    public DeadLetter convert(final Object value, final Headers headers, final long recordTimestamp) {
         final Optional<Integer> partition = getHeader(headers, ERROR_HEADER_ORIG_PARTITION)
                 .map(HeaderHelper::intValue);
         final Optional<String> topic = getHeader(headers, ERROR_HEADER_ORIG_TOPIC)
@@ -83,6 +84,8 @@ class ConnectDeadLetterParser implements DeadLetterParser {
                 .setDescription(
                         String.format("Error in stage %s (%s) in %s[%d]", stage, clazz, connectorName, taskId))
                 .setCause(description)
+                // Kafka Connect propagates the timestamp of the original message
+                .setInputTimestamp(Instant.ofEpochMilli(recordTimestamp))
                 .build();
     }
 
