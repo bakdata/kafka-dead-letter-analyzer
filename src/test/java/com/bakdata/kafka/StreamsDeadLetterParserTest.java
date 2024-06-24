@@ -145,7 +145,14 @@ class StreamsDeadLetterParserTest {
 
     @Test
     void shouldConvert() {
-        final Headers headers = generateDefaultHeaders();
+        final Headers headers = new RecordHeaders()
+                .add(PARTITION, toBytes(1))
+                .add(TOPIC, toBytes("my-topic"))
+                .add(OFFSET, toBytes(10L))
+                .add(DESCRIPTION, toBytes("description"))
+                .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
+                .add(EXCEPTION_MESSAGE, toBytes("my message"))
+                .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
 
         this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 200L))
                 .satisfies(deadLetter -> {
