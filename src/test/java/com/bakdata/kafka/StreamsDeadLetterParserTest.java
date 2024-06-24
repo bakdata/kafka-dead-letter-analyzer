@@ -29,7 +29,6 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_MESSAGE;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_STACK_TRACE;
-import static com.bakdata.kafka.ErrorHeaderProcessor.INPUT_TIMESTAMP;
 import static com.bakdata.kafka.ErrorHeaderProcessor.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
@@ -141,15 +140,14 @@ class StreamsDeadLetterParserTest {
                 .add(DESCRIPTION, toBytes("description"))
                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
-                .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE))
-                .add(INPUT_TIMESTAMP, toBytes(200L));
+                .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
     }
 
     @Test
     void shouldConvert() {
         final Headers headers = generateDefaultHeaders();
 
-        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 0))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 200L))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getInputValue()).hasValue("foo");
                     this.softly.assertThat(deadLetter.getPartition()).hasValue(1);
@@ -189,14 +187,6 @@ class StreamsDeadLetterParserTest {
                 .add(EXCEPTION_MESSAGE, null);
         this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 0))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
-    }
-
-    @Test
-    void shouldFallbackToRecordTimestamp() {
-        Headers headers = generateDefaultHeaders().remove(INPUT_TIMESTAMP);
-        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 500))
-                .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getInputTimestamp())
-                        .hasValue(Instant.ofEpochMilli(500L)));
     }
 
 

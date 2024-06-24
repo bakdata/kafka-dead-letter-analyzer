@@ -28,7 +28,6 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_MESSAGE;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_STACK_TRACE;
-import static com.bakdata.kafka.ErrorHeaderProcessor.INPUT_TIMESTAMP;
 import static com.bakdata.kafka.ErrorHeaderProcessor.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
@@ -72,10 +71,6 @@ class StreamsDeadLetterParser implements DeadLetterParser {
         final String stackTrace = getHeader(headers, EXCEPTION_STACK_TRACE)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(EXCEPTION_STACK_TRACE));
-        final Instant inputTimestamp = getHeader(headers, INPUT_TIMESTAMP)
-                .map(HeaderHelper::longValue)
-                .map(Instant::ofEpochMilli)
-                .orElse(Instant.ofEpochMilli(recordTimestamp));
         final ErrorDescription errorDescription = ErrorDescription.newBuilder()
                 .setErrorClass(errorClass)
                 .setMessage(message)
@@ -88,7 +83,8 @@ class StreamsDeadLetterParser implements DeadLetterParser {
                 .setInputValue(Optional.ofNullable(value).map(ErrorUtil::toString).orElse(null))
                 .setDescription(description)
                 .setCause(errorDescription)
-                .setInputTimestamp(inputTimestamp)
+                // The Header processor propagates the timestamp of the original message
+                .setInputTimestamp(Instant.ofEpochMilli(recordTimestamp))
                 .build();
     }
 }
