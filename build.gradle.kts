@@ -7,7 +7,7 @@ plugins {
     id("com.bakdata.sonatype") version "1.4.0"
     id("io.freefair.lombok") version "8.4"
     id("com.google.cloud.tools.jib") version "3.4.3"
-    id("com.bakdata.avro") version "1.3.1"
+    id("com.bakdata.avro") version "1.4.0"
 }
 
 allprojects {
