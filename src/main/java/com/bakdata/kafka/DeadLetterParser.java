@@ -25,6 +25,7 @@
 package com.bakdata.kafka;
 
 import org.apache.kafka.common.header.Headers;
+import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 
 @FunctionalInterface
 interface DeadLetterParser {
@@ -36,5 +37,6 @@ interface DeadLetterParser {
      * @param headers headers to retrieve meta information such as topic, partition, and offset from.
      * @return {@link DeadLetter} object representing error
      */
-    DeadLetter convert(Object value, Headers headers);
+    DeadLetter convert(Object value, Headers headers, long recordTimestamp);
+
 }

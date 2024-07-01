@@ -52,7 +52,7 @@ dependencies {
     implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.2.1")
     implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.7.0")
     implementation(group = "org.jooq", name = "jool", version = "0.9.14")
-    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.4.2")
+    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.5.0")
 
     val junitVersion = "5.10.1"
     testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = junitVersion)

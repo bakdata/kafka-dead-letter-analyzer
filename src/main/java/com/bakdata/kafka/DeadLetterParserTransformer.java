@@ -42,7 +42,8 @@ class DeadLetterParserTransformer<K> implements FixedKeyProcessor<K, Object, Dea
 
     @Override
     public void process(final FixedKeyRecord<K, Object> inputRecord) {
-        final DeadLetter deadLetter = this.converter.convert(inputRecord.value(), inputRecord.headers());
+        final DeadLetter deadLetter =
+                this.converter.convert(inputRecord.value(), inputRecord.headers(), inputRecord.timestamp());
         this.context.forward(inputRecord.withValue(deadLetter));
     }
 

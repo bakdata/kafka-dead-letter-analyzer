@@ -35,6 +35,7 @@ import static com.bakdata.kafka.HeaderHelper.getHeader;
 import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
 import static com.bakdata.kafka.HeaderHelper.stringValue;
 
+import java.time.Instant;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.header.Headers;
@@ -45,7 +46,7 @@ class StreamsDeadLetterParser implements DeadLetterParser {
     static final String FAULTY_OFFSET_HEADER = "HEADER_PREFIX + offset";
 
     @Override
-    public DeadLetter convert(final Object value, final Headers headers) {
+    public DeadLetter convert(final Object value, final Headers headers, final long recordTimestamp) {
         final int partition = getHeader(headers, PARTITION)
                 .map(HeaderHelper::intValue)
                 .orElseThrow(missingRequiredHeader(PARTITION));
@@ -82,6 +83,8 @@ class StreamsDeadLetterParser implements DeadLetterParser {
                 .setInputValue(Optional.ofNullable(value).map(ErrorUtil::toString).orElse(null))
                 .setDescription(description)
                 .setCause(errorDescription)
+                // The Header processor propagates the timestamp of the original message
+                .setInputTimestamp(Instant.ofEpochMilli(recordTimestamp))
                 .build();
     }
 }

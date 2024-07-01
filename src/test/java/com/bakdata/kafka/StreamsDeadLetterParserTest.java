@@ -34,6 +34,7 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
 import static com.bakdata.kafka.StreamsDeadLetterParser.FAULTY_OFFSET_HEADER;
 
+import java.time.Instant;
 import java.util.stream.Stream;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
@@ -152,7 +153,8 @@ class StreamsDeadLetterParserTest {
                 .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(EXCEPTION_MESSAGE, toBytes("my message"))
                 .add(EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
-        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
+
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 200L))
                 .satisfies(deadLetter -> {
                     this.softly.assertThat(deadLetter.getInputValue()).hasValue("foo");
                     this.softly.assertThat(deadLetter.getPartition()).hasValue(1);
@@ -164,6 +166,7 @@ class StreamsDeadLetterParserTest {
                     this.softly.assertThat(cause.getMessage()).hasValue("my message");
                     this.softly.assertThat(cause.getStackTrace()).hasValue(StackTraceClassifierTest.STACK_TRACE);
                     this.softly.assertThat(deadLetter.getDescription()).isEqualTo("description");
+                    this.softly.assertThat(deadLetter.getInputTimestamp()).hasValue(Instant.ofEpochMilli(200L));
                 });
     }
 
@@ -172,7 +175,7 @@ class StreamsDeadLetterParserTest {
         final Headers headers = generateDefaultHeaders()
                 .remove(OFFSET)
                 .add(FAULTY_OFFSET_HEADER, toBytes(100L));
-        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 0))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(100L));
     }
 
@@ -181,7 +184,7 @@ class StreamsDeadLetterParserTest {
         final Headers headers = generateDefaultHeaders()
                 .add(OFFSET, toBytes(10L))
                 .add(FAULTY_OFFSET_HEADER, toBytes(100L));
-        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 0))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getOffset()).hasValue(10L));
     }
 
@@ -189,14 +192,15 @@ class StreamsDeadLetterParserTest {
     void shouldConvertNullMessageHeader() {
         final Headers headers = generateDefaultHeaders()
                 .add(EXCEPTION_MESSAGE, null);
-        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers))
+        this.softly.assertThat(new StreamsDeadLetterParser().convert("foo", headers, 0))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
     }
+
 
     @ParameterizedTest
     @MethodSource("generateMissingRequiredHeaders")
     void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterParser().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterParser().convert("foo", headers, 0))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
@@ -204,7 +208,7 @@ class StreamsDeadLetterParserTest {
     @ParameterizedTest
     @MethodSource("generateNonNullableHeaders")
     void shouldThrowWithNonNullableHeaders(final Headers headers, final String message) {
-        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterParser().convert("foo", headers))
+        this.softly.assertThatThrownBy(() -> new StreamsDeadLetterParser().convert("foo", headers, 0))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(message);
     }
