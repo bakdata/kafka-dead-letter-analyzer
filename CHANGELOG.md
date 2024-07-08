@@ -1,5 +1,20 @@
 # Change Log
 
+## [1.3.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.3.0) (2024-07-08)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.3.0...1.3.0)
+
+
+## [1.3.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.3.0) (2024-07-08)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.2.0...1.3.0)
+
+**Merged pull requests:**
+
+- Support dead letters with `input\_timestamp` field [\#15](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/15) ([@torbsto](https://github.com/torbsto))
+- Bump dependencies [\#14](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/14) ([@torbsto](https://github.com/torbsto))
+- Upgrade to Gradle 8.4 [\#13](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/13) ([@philipp94831](https://github.com/philipp94831))
+- Migrate azure pipeline to GH\-action [\#10](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/10) ([@MichaelKora](https://github.com/MichaelKora))
+- Fix Jacoco for Java 17 [\#12](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/12) ([@philipp94831](https://github.com/philipp94831))
+
 ## [1.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.2.0) (2024-01-17)
 [View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.1.0...1.2.0)
 
