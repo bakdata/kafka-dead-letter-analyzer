@@ -29,17 +29,12 @@ import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ER
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Pattern;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.Produced;
@@ -51,20 +46,19 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 
-@Builder
+@RequiredArgsConstructor
 @Getter
 class DeadLetterAnalyzerTopology {
-    static final String REPARTITION_NAME = "analyzed";
-    private static final String STATISTICS_STORE_NAME = "statistics";
-    private final @NonNull Pattern inputPattern;
-    private final @NonNull String outputTopic;
-    private final @NonNull String statsTopic;
-    private final @NonNull String examplesTopic;
-    private final @NonNull String errorTopic;
-    private final @NonNull Properties kafkaProperties;
 
-    private static Map<String, Object> originals(final Properties properties) {
-        return new StreamsConfig(properties).originals();
+    static final String EXAMPLES_TOPIC_LABEL = "examples";
+    static final String STATS_TOPIC_LABEL = "stats";
+    private static final String REPARTITION_NAME = "analyzed";
+    private static final String STATISTICS_STORE_NAME = "statistics";
+    private final @NonNull TopologyBuilder builder;
+
+    static <T extends SpecificRecord> Preconfigured<Serde<T>> getSpecificAvroSerde() {
+        final Serde<T> serde = new SpecificAvroSerde<>();
+        return Preconfigured.create(serde);
     }
 
     private static String toElasticKey(final ErrorKey key) {
@@ -95,36 +89,62 @@ class DeadLetterAnalyzerTopology {
         return object instanceof DeadLetter ? List.of((DeadLetter) object) : List.of();
     }
 
-    void buildTopology(final StreamsBuilder builder) {
-        final KStream<Object, DeadLetter> allDeadLetters = this.streamDeadLetters(builder);
+    private static Preconfigured<Serde<Object>> getInputSerde() {
+        final Serde<Object> serde = new BruteForceSerde();
+        return Preconfigured.create(serde);
+    }
+
+    void buildTopology() {
+        final KStream<Object, DeadLetter> allDeadLetters = this.streamDeadLetters();
         final KStream<Object, KeyedDeadLetterWithContext> deadLettersWithContext =
                 this.enrichWithContext(allDeadLetters);
         deadLettersWithContext
                 .selectKey((k, v) -> v.extractElasticKey())
                 .mapValues(KeyedDeadLetterWithContext::format)
-                .to(this.outputTopic);
+                .to(this.getOutputTopic());
 
         final KStream<ErrorKey, Result> aggregated = this.aggregate(deadLettersWithContext);
         aggregated
                 .mapValues((errorKey, result) -> result.toFullErrorStatistics(errorKey))
                 .selectKey((k, v) -> toElasticKey(k))
-                .to(this.statsTopic, Produced.valueSerde(this.getSpecificAvroSerde(false)));
+                .to(this.getStatsTopic(),
+                        Produced.valueSerde(
+                                this.configureForValues(getSpecificAvroSerde())));
         aggregated
                 .flatMapValues(Result::getExamples)
                 .mapValues(DeadLetterAnalyzerTopology::toErrorExample)
                 .selectKey((k, v) -> toElasticKey(k))
-                .to(this.examplesTopic);
+                .to(this.getExamplesTopic());
     }
 
-    <T extends SpecificRecord> Serde<T> getSpecificAvroSerde(final boolean isKey) {
-        final Serde<T> serde = new SpecificAvroSerde<>();
-        serde.configure(new StreamsConfig(this.kafkaProperties).originals(), isKey);
-        return serde;
+    String getExamplesTopic() {
+        return this.builder.getTopics().getOutputTopic(EXAMPLES_TOPIC_LABEL);
     }
 
-    private KStream<Object, DeadLetter> streamDeadLetters(final StreamsBuilder builder) {
-        final KStream<Object, Object> rawDeadLetters = builder.stream(this.inputPattern,
-                Consumed.with(this.getInputSerde(true), this.getInputSerde(false)));
+    String getStatsTopic() {
+        return this.builder.getTopics().getOutputTopic(STATS_TOPIC_LABEL);
+    }
+
+    String getOutputTopic() {
+        return this.builder.getTopics().getOutputTopic();
+    }
+
+    String getErrorTopic() {
+        return this.builder.getTopics().getErrorTopic();
+    }
+
+    <T> T configureForKeys(final Preconfigured<T> preconfigured) {
+        return this.builder.createConfigurator().configureForKeys(preconfigured);
+    }
+
+    <T> T configureForValues(final Preconfigured<T> preconfigured) {
+        return this.builder.createConfigurator().configureForValues(preconfigured);
+    }
+
+    private KStream<Object, DeadLetter> streamDeadLetters() {
+        final KStream<Object, Object> rawDeadLetters = this.builder.streamInputPattern(
+                Consumed.with(this.configureForKeys(getInputSerde()),
+                        this.configureForValues(getInputSerde())));
 
         final KStream<Object, DeadLetter> streamDeadLetters = rawDeadLetters
                 .flatMapValues(DeadLetterAnalyzerTopology::getDeadLetters);
@@ -143,20 +163,15 @@ class DeadLetterAnalyzerTopology {
                 .merge(streamHeaderDeadLetters);
     }
 
-    private Serde<Object> getInputSerde(final boolean isKey) {
-        final Serde<Object> serde = new BruteForceSerde();
-        serde.configure(originals(this.kafkaProperties), isKey);
-        return serde;
-    }
-
     private <K> void toDeadLetterTopic(final KStream<K, DeadLetter> connectDeadLetters) {
         connectDeadLetters
                 .selectKey((k, v) -> ErrorUtil.toString(k))
-                .to(this.errorTopic);
+                .to(this.getErrorTopic());
     }
 
     private KStream<ErrorKey, Result> aggregate(final KStream<?, KeyedDeadLetterWithContext> withContext) {
-        final Serde<ErrorKey> errorKeySerde = this.getSpecificAvroSerde(true);
+        final Serde<ErrorKey> errorKeySerde =
+                this.builder.createConfigurator().configureForKeys(getSpecificAvroSerde());
         final StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> statisticsStore =
                 this.createStatisticsStore(errorKeySerde);
 
@@ -190,7 +205,8 @@ class DeadLetterAnalyzerTopology {
     private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
             final Serde<ErrorKey> errorKeySerde) {
         final KeyValueBytesStoreSupplier statisticsStoreSupplier = Stores.inMemoryKeyValueStore(STATISTICS_STORE_NAME);
-        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde, this.getSpecificAvroSerde(false));
+        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde,
+                this.configureForValues(getSpecificAvroSerde()));
     }
 
     private <K> KStream<K, KeyedDeadLetterWithContext> enrichWithContext(

@@ -25,63 +25,42 @@
 package com.bakdata.kafka;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
-import java.util.Properties;
-import lombok.Setter;
-import lombok.ToString;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 
 /**
  * A Kafka Streams application that analyzes dead letters in your Kafka cluster
  */
 @Slf4j
-@ToString(callSuper = true)
-@Setter
-public final class DeadLetterAnalyzerApplication extends LargeMessageKafkaStreamsApplication {
-
-    private static final String EXAMPLES_TOPIC_ROLE = "examples";
-    private static final String STATS_TOPIC_ROLE = "stats";
+public final class DeadLetterAnalyzerApplication implements LargeMessageStreamsApp {
 
     public static void main(final String[] args) {
-        startApplication(new DeadLetterAnalyzerApplication(), args);
+        KafkaApplication.startApplication(new SimpleKafkaStreamsApplication(DeadLetterAnalyzerApplication::new), args);
     }
 
     @Override
-    public void buildTopology(final StreamsBuilder builder) {
-        DeadLetterAnalyzerTopology.builder()
-                .inputPattern(this.getInputPattern())
-                .outputTopic(this.getOutputTopic())
-                .statsTopic(this.getStatsTopic())
-                .examplesTopic(this.getExamplesTopic())
-                .errorTopic(this.getErrorTopic())
-                .kafkaProperties(this.getKafkaProperties())
-                .build()
-                .buildTopology(builder);
+    public void buildTopology(final TopologyBuilder topologyBuilder) {
+        new DeadLetterAnalyzerTopology(topologyBuilder).buildTopology();
     }
 
     @Override
-    public Properties createKafkaProperties() {
-        final Properties kafkaProperties = super.createKafkaProperties();
-        kafkaProperties.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, StringSerde.class);
-        kafkaProperties.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, LargeMessageSerde.class);
+    public Map<String, Object> createKafkaProperties() {
+        final Map<String, Object> kafkaProperties = new HashMap<>();
         kafkaProperties.put(LargeMessageSerdeConfig.VALUE_SERDE_CLASS_CONFIG, SpecificAvroSerde.class);
         kafkaProperties.put(AbstractLargeMessageConfig.USE_HEADERS_CONFIG, true);
         return kafkaProperties;
     }
 
     @Override
-    public String getUniqueAppId() {
-        return "dead-letter-analyzer-" + this.getOutputTopic();
+    public SerdeConfig defaultSerializationConfig() {
+        return new SerdeConfig(StringSerde.class, LargeMessageSerde.class);
     }
 
-    private String getStatsTopic() {
-        return this.getOutputTopic(STATS_TOPIC_ROLE);
-    }
-
-    private String getExamplesTopic() {
-        return this.getOutputTopic(EXAMPLES_TOPIC_ROLE);
+    @Override
+    public String getUniqueAppId(final StreamsTopicConfig streamsTopicConfig) {
+        return "dead-letter-analyzer-" + streamsTopicConfig.getOutputTopic();
     }
 
 }

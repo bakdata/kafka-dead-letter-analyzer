@@ -25,6 +25,8 @@
 package com.bakdata.kafka;
 
 import static com.bakdata.kafka.ConnectDeadLetterParserTest.toBytes;
+import static com.bakdata.kafka.DeadLetterAnalyzerTopology.EXAMPLES_TOPIC_LABEL;
+import static com.bakdata.kafka.DeadLetterAnalyzerTopology.STATS_TOPIC_LABEL;
 import static com.bakdata.kafka.ErrorHeaderProcessor.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_MESSAGE;
@@ -52,7 +54,7 @@ import com.bakdata.fluent_kafka_streams_tests.junit5.TestTopologyExtension;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Properties;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -60,8 +62,6 @@ import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
@@ -75,10 +75,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class DeadLetterAnalyzerTopologyTest {
     private DeadLetterAnalyzerTopology app;
     @RegisterExtension
-    TestTopologyExtension<String, DeadLetter> topology =
-            new TestTopologyExtension<>(this::createTopology,
-                    StreamsBootstrapTopologyFactory.getKafkaPropertiesWithSchemaRegistryUrl(
-                            new DeadLetterAnalyzerApplication()));
+    TestTopologyExtension<String, DeadLetter> topology = this.createTestTopology();
     @InjectSoftAssertions
     private SoftAssertions softly;
 
@@ -388,7 +385,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
                 .setDescription("Error in stage VALUE_CONVERTER (org.apache.kafka.connect.json.JsonConverter) in "
-                        + "my-connector[2]")
+                                + "my-connector[2]")
                 .setPartition(1)
                 .setTopic("my-topic")
                 .setOffset(10L)
@@ -527,7 +524,7 @@ class DeadLetterAnalyzerTopologyTest {
     @Test
     void shouldReadAvroKey() {
         final TestInput<SpecificRecord, SpecificRecord> input =
-                this.getStreamsInput(this.app.getSpecificAvroSerde(true));
+                this.getStreamsInput(this.app.configureForKeys(DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
         final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
@@ -571,17 +568,28 @@ class DeadLetterAnalyzerTopologyTest {
         this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
     }
 
-    private Topology createTopology(final Properties properties) {
-        this.app = DeadLetterAnalyzerTopology.builder()
-                .inputPattern(Pattern.compile(".*-dead-letter-topic"))
-                .outputTopic("output")
-                .errorTopic("analyzer-stream-dead-letter-topic")
-                .examplesTopic("examples")
-                .statsTopic("stats")
-                .kafkaProperties(properties)
-                .build();
-        final StreamsBuilder builder = new StreamsBuilder();
-        this.app.buildTopology(builder);
+    private TestTopologyExtension<String, DeadLetter> createTestTopology() {
+        final ConfiguredStreamsApp<DeadLetterAnalyzerApplication> configuredApp =
+                new ConfiguredStreamsApp<>(new DeadLetterAnalyzerApplication(),
+                        new AppConfiguration<>(StreamsTopicConfig.builder()
+                                .inputPattern(Pattern.compile(".*-dead-letter-topic"))
+                                .outputTopic("output")
+                                .errorTopic("analyzer-stream-dead-letter-topic")
+                                .labeledOutputTopics(
+                                        Map.of(
+                                                EXAMPLES_TOPIC_LABEL, "examples",
+                                                STATS_TOPIC_LABEL, "stats"
+                                        )
+                                )
+                                .build()));
+        return new TestTopologyExtension<>(properties -> this.createTopology(properties, configuredApp),
+                TestTopologyFactory.getKafkaPropertiesWithSchemaRegistryUrl(configuredApp));
+    }
+
+    private Topology createTopology(final Map<String, Object> properties, final ConfiguredStreamsApp<?> configuredApp) {
+        final TopologyBuilder builder = new TopologyBuilder(configuredApp.getTopics(), properties);
+        this.app = new DeadLetterAnalyzerTopology(builder);
+        this.app.buildTopology();
         return builder.build();
     }
 
@@ -593,13 +601,13 @@ class DeadLetterAnalyzerTopologyTest {
 
     private <T> Serde<T> getLargeMessageSerde() {
         final Serde<T> valueSerde = new LargeMessageSerde<>();
-        valueSerde.configure(new StreamsConfig(this.app.getKafkaProperties()).originals(), false);
-        return valueSerde;
+        return this.app.configureForValues(Preconfigured.create(valueSerde));
     }
 
     private TestOutput<String, FullErrorStatistics> getStatistics() {
         return this.topology.streamOutput(this.app.getStatsTopic())
-                .withValueSerde(this.app.getSpecificAvroSerde(false));
+                .withValueSerde(new Configurator(this.topology.getProperties()).configureForValues(
+                        DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
     }
 
     private TestOutput<String, ErrorExample> getExamples() {
@@ -625,7 +633,7 @@ class DeadLetterAnalyzerTopologyTest {
 
     private <K> TestInput<K, SpecificRecord> getInput(final Serde<K> keySerde, final String topic) {
         return this.topology.input(topic)
-                .withValueSerde(this.app.getSpecificAvroSerde(false))
+                .withValueSerde(this.app.configureForValues(DeadLetterAnalyzerTopology.getSpecificAvroSerde()))
                 .withKeySerde(keySerde);
     }
 
