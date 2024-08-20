@@ -61,6 +61,14 @@ class DeadLetterAnalyzerTopology {
         return Preconfigured.create(serde);
     }
 
+    static String getExamplesTopic(final StreamsTopicConfig topics) {
+        return topics.getOutputTopic(EXAMPLES_TOPIC_LABEL);
+    }
+
+    static String getStatsTopic(final StreamsTopicConfig topics) {
+        return topics.getOutputTopic(STATS_TOPIC_LABEL);
+    }
+
     private static String toElasticKey(final ErrorKey key) {
         return String.format("%s:%s", key.getTopic(), key.getType());
     }
@@ -98,46 +106,30 @@ class DeadLetterAnalyzerTopology {
         final KStream<Object, DeadLetter> allDeadLetters = this.streamDeadLetters();
         final KStream<Object, KeyedDeadLetterWithContext> deadLettersWithContext =
                 this.enrichWithContext(allDeadLetters);
+        final StreamsTopicConfig topics = this.builder.getTopics();
         deadLettersWithContext
                 .selectKey((k, v) -> v.extractElasticKey())
                 .mapValues(KeyedDeadLetterWithContext::format)
-                .to(this.getOutputTopic());
+                .to(topics.getOutputTopic());
 
         final KStream<ErrorKey, Result> aggregated = this.aggregate(deadLettersWithContext);
         aggregated
                 .mapValues((errorKey, result) -> result.toFullErrorStatistics(errorKey))
                 .selectKey((k, v) -> toElasticKey(k))
-                .to(this.getStatsTopic(),
-                        Produced.valueSerde(
-                                this.configureForValues(getSpecificAvroSerde())));
+                .to(getStatsTopic(topics),
+                        Produced.valueSerde(this.configureForValues(getSpecificAvroSerde())));
         aggregated
                 .flatMapValues(Result::getExamples)
                 .mapValues(DeadLetterAnalyzerTopology::toErrorExample)
                 .selectKey((k, v) -> toElasticKey(k))
-                .to(this.getExamplesTopic());
+                .to(getExamplesTopic(topics));
     }
 
-    String getExamplesTopic() {
-        return this.builder.getTopics().getOutputTopic(EXAMPLES_TOPIC_LABEL);
-    }
-
-    String getStatsTopic() {
-        return this.builder.getTopics().getOutputTopic(STATS_TOPIC_LABEL);
-    }
-
-    String getOutputTopic() {
-        return this.builder.getTopics().getOutputTopic();
-    }
-
-    String getErrorTopic() {
-        return this.builder.getTopics().getErrorTopic();
-    }
-
-    <T> T configureForKeys(final Preconfigured<T> preconfigured) {
+    private <T> T configureForKeys(final Preconfigured<T> preconfigured) {
         return this.builder.createConfigurator().configureForKeys(preconfigured);
     }
 
-    <T> T configureForValues(final Preconfigured<T> preconfigured) {
+    private <T> T configureForValues(final Preconfigured<T> preconfigured) {
         return this.builder.createConfigurator().configureForValues(preconfigured);
     }
 
@@ -166,7 +158,7 @@ class DeadLetterAnalyzerTopology {
     private <K> void toDeadLetterTopic(final KStream<K, DeadLetter> connectDeadLetters) {
         connectDeadLetters
                 .selectKey((k, v) -> ErrorUtil.toString(k))
-                .to(this.getErrorTopic());
+                .to(this.builder.getTopics().getErrorTopic());
     }
 
     private KStream<ErrorKey, Result> aggregate(final KStream<?, KeyedDeadLetterWithContext> withContext) {
