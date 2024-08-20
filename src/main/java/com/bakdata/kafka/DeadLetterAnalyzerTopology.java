@@ -30,7 +30,6 @@ import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ER
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.List;
 import java.util.Set;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecord;
@@ -47,7 +46,6 @@ import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
 
 @RequiredArgsConstructor
-@Getter
 class DeadLetterAnalyzerTopology {
 
     static final String EXAMPLES_TOPIC_LABEL = "examples";
@@ -116,8 +114,7 @@ class DeadLetterAnalyzerTopology {
         aggregated
                 .mapValues((errorKey, result) -> result.toFullErrorStatistics(errorKey))
                 .selectKey((k, v) -> toElasticKey(k))
-                .to(getStatsTopic(topics),
-                        Produced.valueSerde(this.configureForValues(getSpecificAvroSerde())));
+                .to(getStatsTopic(topics), Produced.valueSerde(this.configureForValues(getSpecificAvroSerde())));
         aggregated
                 .flatMapValues(Result::getExamples)
                 .mapValues(DeadLetterAnalyzerTopology::toErrorExample)
@@ -135,8 +132,7 @@ class DeadLetterAnalyzerTopology {
 
     private KStream<Object, DeadLetter> streamDeadLetters() {
         final KStream<Object, Object> rawDeadLetters = this.builder.streamInputPattern(
-                Consumed.with(this.configureForKeys(getInputSerde()),
-                        this.configureForValues(getInputSerde())));
+                Consumed.with(this.configureForKeys(getInputSerde()), this.configureForValues(getInputSerde())));
 
         final KStream<Object, DeadLetter> streamDeadLetters = rawDeadLetters
                 .flatMapValues(DeadLetterAnalyzerTopology::getDeadLetters);
@@ -162,8 +158,7 @@ class DeadLetterAnalyzerTopology {
     }
 
     private KStream<ErrorKey, Result> aggregate(final KStream<?, KeyedDeadLetterWithContext> withContext) {
-        final Serde<ErrorKey> errorKeySerde =
-                this.builder.createConfigurator().configureForKeys(getSpecificAvroSerde());
+        final Serde<ErrorKey> errorKeySerde = this.configureForKeys(getSpecificAvroSerde());
         final StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> statisticsStore =
                 this.createStatisticsStore(errorKeySerde);
 

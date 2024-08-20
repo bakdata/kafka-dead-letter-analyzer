@@ -538,8 +538,7 @@ class DeadLetterAnalyzerTopologyTest {
     @Test
     void shouldReadAvroKey() {
         final TestInput<SpecificRecord, SpecificRecord> input =
-                this.getStreamsInput(
-                        this.getConfigurator().configureForKeys(DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
+                this.getStreamsInput(this.configureForKeys(DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
         final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
@@ -595,13 +594,21 @@ class DeadLetterAnalyzerTopologyTest {
 
     private <T> Serde<T> getLargeMessageSerde() {
         final Serde<T> valueSerde = new LargeMessageSerde<>();
-        return this.getConfigurator().configureForValues(valueSerde);
+        final Preconfigured<Serde<T>> preconfigured = Preconfigured.create(valueSerde);
+        return this.configureForValues(preconfigured);
+    }
+
+    private <T> T configureForKeys(final Preconfigured<T> preconfigured) {
+        return this.getConfigurator().configureForKeys(preconfigured);
+    }
+
+    private <T> T configureForValues(final Preconfigured<T> preconfigured) {
+        return this.getConfigurator().configureForValues(preconfigured);
     }
 
     private TestOutput<String, FullErrorStatistics> getStatistics() {
         return this.topology.streamOutput(DeadLetterAnalyzerTopology.getStatsTopic(TOPIC_CONFIG))
-                .withValueSerde(
-                        this.getConfigurator().configureForValues(DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
+                .withValueSerde(this.configureForValues(DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
     }
 
     private TestOutput<String, ErrorExample> getExamples() {
@@ -627,8 +634,7 @@ class DeadLetterAnalyzerTopologyTest {
 
     private <K> TestInput<K, SpecificRecord> getInput(final Serde<K> keySerde, final String topic) {
         return this.topology.input(topic)
-                .withValueSerde(
-                        this.getConfigurator().configureForValues(DeadLetterAnalyzerTopology.getSpecificAvroSerde()))
+                .withValueSerde(this.configureForValues(DeadLetterAnalyzerTopology.getSpecificAvroSerde()))
                 .withKeySerde(keySerde);
     }
 

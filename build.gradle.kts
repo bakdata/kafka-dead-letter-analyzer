@@ -48,7 +48,7 @@ dependencies {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
     val streamsBootstrapVersion = "3.0.1"
-    implementation(
+    api(
         group = "com.bakdata.kafka",
         name = "streams-bootstrap-large-messages",
         version = streamsBootstrapVersion

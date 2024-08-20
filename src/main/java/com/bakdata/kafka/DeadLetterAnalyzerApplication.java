@@ -27,13 +27,11 @@ package com.bakdata.kafka;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Serdes.StringSerde;
 
 /**
  * A Kafka Streams application that analyzes dead letters in your Kafka cluster
  */
-@Slf4j
 public final class DeadLetterAnalyzerApplication implements LargeMessageStreamsApp {
 
     public static void main(final String[] args) {
