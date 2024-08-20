@@ -569,19 +569,20 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     private TestTopologyExtension<String, DeadLetter> createTestTopology() {
-        final ConfiguredStreamsApp<DeadLetterAnalyzerApplication> configuredApp =
-                new ConfiguredStreamsApp<>(new DeadLetterAnalyzerApplication(),
-                        new AppConfiguration<>(StreamsTopicConfig.builder()
-                                .inputPattern(Pattern.compile(".*-dead-letter-topic"))
-                                .outputTopic("output")
-                                .errorTopic("analyzer-stream-dead-letter-topic")
-                                .labeledOutputTopics(
-                                        Map.of(
-                                                EXAMPLES_TOPIC_LABEL, "examples",
-                                                STATS_TOPIC_LABEL, "stats"
-                                        )
-                                )
-                                .build()));
+        final StreamsApp app = new DeadLetterAnalyzerApplication();
+        final StreamsTopicConfig topicConfig = StreamsTopicConfig.builder()
+                .inputPattern(Pattern.compile(".*-dead-letter-topic"))
+                .outputTopic("output")
+                .errorTopic("analyzer-stream-dead-letter-topic")
+                .labeledOutputTopics(
+                        Map.of(
+                                EXAMPLES_TOPIC_LABEL, "examples",
+                                STATS_TOPIC_LABEL, "stats"
+                        )
+                )
+                .build();
+        final ConfiguredStreamsApp<StreamsApp> configuredApp =
+                new ConfiguredStreamsApp<>(app, new AppConfiguration<>(topicConfig));
         return new TestTopologyExtension<>(properties -> this.createTopology(properties, configuredApp),
                 TestTopologyFactory.getKafkaPropertiesWithSchemaRegistryUrl(configuredApp));
     }
