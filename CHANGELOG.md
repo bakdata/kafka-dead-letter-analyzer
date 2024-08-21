@@ -1,8 +1,15 @@
 # Change Log
 
-## [1.3.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.3.0) (2024-07-08)
-[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.3.0...1.3.0)
+## [2.0.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.0.0) (2024-08-21)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.0.0...2.0.0)
 
+
+## [2.0.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.0.0) (2024-08-21)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.3.0...2.0.0)
+
+**Merged pull requests:**
+
+- Upgrade to streams\-bootstrap v3 [\#18](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/18) ([@philipp94831](https://github.com/philipp94831))
 
 ## [1.3.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.3.0) (2024-07-08)
 [View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.2.0...1.3.0)
