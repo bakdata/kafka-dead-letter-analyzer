@@ -21,7 +21,6 @@ allprojects {
     repositories {
         mavenCentral()
         maven(url = "https://packages.confluent.io/maven/")
-        maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots")
     }
 }
 
@@ -55,7 +54,7 @@ dependencies {
         version = streamsBootstrapVersion
     )
     implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli", version = streamsBootstrapVersion)
-    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.2.2-SNAPSHOT")
+    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.3.0")
     implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.9.1")
     implementation(group = "org.jooq", name = "jool", version = "0.9.15")
     avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.6.0")
