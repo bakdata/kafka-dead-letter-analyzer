@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 bakdata
+ * Copyright (c) 2025 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,6 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
 import static com.bakdata.kafka.Formatter.DATE_TIME_FORMATTER;
 import static com.bakdata.kafka.HeaderLargeMessagePayloadProtocol.getHeaderName;
-import static com.bakdata.kafka.TestTopologyFactory.createTopologyExtensionWithSchemaRegistry;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION_MESSAGE;
@@ -84,8 +83,9 @@ class DeadLetterAnalyzerTopologyTest {
                     )
             )
             .build();
+    private final TestTopologyFactory factory = TestTopologyFactory.withSchemaRegistry();
     @RegisterExtension
-    TestTopologyExtension<String, DeadLetter> topology = createTopologyExtensionWithSchemaRegistry(createApp());
+    TestTopologyExtension<String, DeadLetter> topology = this.factory.createTopologyExtension(createApp());
     @InjectSoftAssertions
     private SoftAssertions softly;
 
@@ -578,7 +578,7 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     private Configurator getConfigurator() {
-        return new Configurator(this.topology.getProperties());
+        return TestTopologyFactory.createConfigurator(this.topology);
     }
 
     private void assertNoDeadLetters() {
