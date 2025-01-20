@@ -1,3 +1,16 @@
+import com.bakdata.gradle.BakdataJibExtension
+
+buildscript {
+    repositories {
+        maven {
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
+        }
+    }
+    dependencies {
+        classpath("com.bakdata.gradle:jib:1.4.3-SNAPSHOT")
+    }
+}
+
 description = "Kafka Streams application that analyzes dead letters in your Kafka cluster"
 
 plugins {
@@ -6,9 +19,9 @@ plugins {
     id("com.bakdata.sonar") version "1.4.2"
     id("com.bakdata.sonatype") version "1.4.1"
     id("io.freefair.lombok") version "8.4"
-    id("com.google.cloud.tools.jib") version "3.4.4"
     id("com.bakdata.avro") version "1.4.0"
 }
+apply(plugin = "com.bakdata.jib")
 
 allprojects {
     group = "com.bakdata.kafka"
@@ -73,4 +86,8 @@ avro {
     setGettersReturnOptional(true)
     setOptionalGettersForNullableFieldsOnly(true)
     setFieldVisibility("PRIVATE")
+}
+
+configure<BakdataJibExtension> {
+    imageName.set("kafka-dead-letter-analyzer")
 }
