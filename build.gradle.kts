@@ -6,7 +6,7 @@ plugins {
     id("com.bakdata.sonar") version "1.4.2"
     id("com.bakdata.sonatype") version "1.4.1"
     id("io.freefair.lombok") version "8.4"
-    id("com.google.cloud.tools.jib") version "3.4.4"
+    id("com.bakdata.jib") version "1.5.2"
     id("com.bakdata.avro") version "1.4.0"
 }
 
@@ -73,4 +73,8 @@ avro {
     setGettersReturnOptional(true)
     setOptionalGettersForNullableFieldsOnly(true)
     setFieldVisibility("PRIVATE")
+}
+
+jibImage {
+    name.set("kafka-dead-letter-analyzer")
 }
