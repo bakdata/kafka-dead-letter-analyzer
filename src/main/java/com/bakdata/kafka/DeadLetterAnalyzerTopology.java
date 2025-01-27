@@ -117,14 +117,6 @@ class DeadLetterAnalyzerTopology {
                 .toOutputTopic(EXAMPLES_TOPIC_LABEL);
     }
 
-    private <T> T configureForKeys(final Preconfigured<T> preconfigured) {
-        return this.builder.createConfigurator().configureForKeys(preconfigured);
-    }
-
-    private <T> T configureForValues(final Preconfigured<T> preconfigured) {
-        return this.builder.createConfigurator().configureForValues(preconfigured);
-    }
-
     private ImprovedKStream<Object, DeadLetter> streamDeadLetters() {
         final ImprovedKStream<Object, Object> rawDeadLetters = this.builder.streamInputPattern(
                 ConfiguredConsumed.with(getInputSerde(), getInputSerde()));
@@ -189,8 +181,7 @@ class DeadLetterAnalyzerTopology {
     private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
             final Preconfigured<? extends Serde<ErrorKey>> errorKeySerde) {
         final KeyValueBytesStoreSupplier statisticsStoreSupplier = Stores.inMemoryKeyValueStore(STATISTICS_STORE_NAME);
-        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, this.configureForKeys(errorKeySerde),
-                this.configureForValues(getSpecificAvroSerde()));
+        return this.builder.stores().keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde, getSpecificAvroSerde());
     }
 
     private static <K> ImprovedKStream<K, KeyedDeadLetterWithContext> enrichWithContext(
