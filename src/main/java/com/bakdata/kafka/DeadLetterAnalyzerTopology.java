@@ -97,48 +97,6 @@ class DeadLetterAnalyzerTopology {
         return Preconfigured.create(serde);
     }
 
-    private static <K> void toDeadLetterTopic(final ImprovedKStream<K, DeadLetter> connectDeadLetters) {
-        connectDeadLetters
-                .selectKey((k, v) -> ErrorUtil.toString(k))
-                .toErrorTopic();
-    }
-
-    private <T> T configureForKeys(final Preconfigured<T> preconfigured) {
-        return this.builder.createConfigurator().configureForKeys(preconfigured);
-    }
-
-    private <T> T configureForValues(final Preconfigured<T> preconfigured) {
-        return this.builder.createConfigurator().configureForValues(preconfigured);
-    }
-
-    private static <K> ImprovedKStream<K, KeyedDeadLetterWithContext> enrichWithContext(
-            final ImprovedKStream<K, ? extends DeadLetter> allDeadLetters) {
-        final ImprovedKStream<K, ProcessedValue<DeadLetter, KeyedDeadLetterWithContext>> processedDeadLetters =
-                allDeadLetters.processValues(
-                        ErrorCapturingValueProcessor.captureErrors(ContextEnricher::new));
-
-        final ImprovedKStream<K, DeadLetter> analysisDeadLetters =
-                processedDeadLetters.flatMapValues(ProcessedValue::getErrors)
-                        .processValues(AvroDeadLetterConverter.asProcessor("Error analyzing dead letter"));
-        toDeadLetterTopic(analysisDeadLetters);
-
-        return processedDeadLetters.flatMapValues(ProcessedValue::getValues);
-    }
-
-    private static <K> ImprovedKStream<K, DeadLetter> streamHeaderDeadLetters(final ImprovedKStream<K, Object> input,
-            final DeadLetterParser converterFactory) {
-        final ImprovedKStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.processValues(
-                ErrorCapturingValueProcessor.captureErrors(
-                        () -> new DeadLetterParserTransformer<>(converterFactory)));
-        final ImprovedKStream<K, DeadLetter> deadLetters =
-                processedInput.flatMapValues(ProcessedValue::getErrors)
-                        .processValues(
-                                AvroDeadLetterConverter.asProcessor("Error converting errors to dead letters"));
-        toDeadLetterTopic(deadLetters);
-
-        return processedInput.flatMapValues(ProcessedValue::getValues);
-    }
-
     void buildTopology() {
         final ImprovedKStream<Object, DeadLetter> allDeadLetters = this.streamDeadLetters();
         final ImprovedKStream<Object, KeyedDeadLetterWithContext> deadLettersWithContext =
@@ -160,11 +118,12 @@ class DeadLetterAnalyzerTopology {
                 .toOutputTopic(EXAMPLES_TOPIC_LABEL);
     }
 
-    private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
-            final Serde<ErrorKey> errorKeySerde) {
-        final KeyValueBytesStoreSupplier statisticsStoreSupplier = Stores.inMemoryKeyValueStore(STATISTICS_STORE_NAME);
-        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde,
-                this.configureForValues(getSpecificAvroSerde()));
+    private <T> T configureForKeys(final Preconfigured<T> preconfigured) {
+        return this.builder.createConfigurator().configureForKeys(preconfigured);
+    }
+
+    private <T> T configureForValues(final Preconfigured<T> preconfigured) {
+        return this.builder.createConfigurator().configureForValues(preconfigured);
     }
 
     private ImprovedKStream<Object, DeadLetter> streamDeadLetters() {
@@ -186,6 +145,12 @@ class DeadLetterAnalyzerTopology {
 
         return streamDeadLetters.merge(connectDeadLetters)
                 .merge(streamHeaderDeadLetters);
+    }
+
+    private static <K> void toDeadLetterTopic(final ImprovedKStream<K, DeadLetter> connectDeadLetters) {
+        connectDeadLetters
+                .selectKey((k, v) -> ErrorUtil.toString(k))
+                .toErrorTopic();
     }
 
     private ImprovedKStream<ErrorKey, Result> aggregate(
@@ -219,6 +184,41 @@ class DeadLetterAnalyzerTopology {
         toDeadLetterTopic(aggregationDeadLetters);
 
         return processedAggregations.values();
+    }
+
+    private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
+            final Serde<ErrorKey> errorKeySerde) {
+        final KeyValueBytesStoreSupplier statisticsStoreSupplier = Stores.inMemoryKeyValueStore(STATISTICS_STORE_NAME);
+        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde,
+                this.configureForValues(getSpecificAvroSerde()));
+    }
+
+    private static <K> ImprovedKStream<K, KeyedDeadLetterWithContext> enrichWithContext(
+            final ImprovedKStream<K, ? extends DeadLetter> allDeadLetters) {
+        final ImprovedKStream<K, ProcessedValue<DeadLetter, KeyedDeadLetterWithContext>> processedDeadLetters =
+                allDeadLetters.processValues(
+                        ErrorCapturingValueProcessor.captureErrors(ContextEnricher::new));
+
+        final ImprovedKStream<K, DeadLetter> analysisDeadLetters =
+                processedDeadLetters.flatMapValues(ProcessedValue::getErrors)
+                        .processValues(AvroDeadLetterConverter.asProcessor("Error analyzing dead letter"));
+        toDeadLetterTopic(analysisDeadLetters);
+
+        return processedDeadLetters.flatMapValues(ProcessedValue::getValues);
+    }
+
+    private static <K> ImprovedKStream<K, DeadLetter> streamHeaderDeadLetters(final ImprovedKStream<K, Object> input,
+            final DeadLetterParser converterFactory) {
+        final ImprovedKStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.processValues(
+                ErrorCapturingValueProcessor.captureErrors(
+                        () -> new DeadLetterParserTransformer<>(converterFactory)));
+        final ImprovedKStream<K, DeadLetter> deadLetters =
+                processedInput.flatMapValues(ProcessedValue::getErrors)
+                        .processValues(
+                                AvroDeadLetterConverter.asProcessor("Error converting errors to dead letters"));
+        toDeadLetterTopic(deadLetters);
+
+        return processedInput.flatMapValues(ProcessedValue::getValues);
     }
 
 }
