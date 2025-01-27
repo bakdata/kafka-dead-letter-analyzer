@@ -4,12 +4,11 @@ on:
   push:
     tags: ["**"]
     branches: ["**"]
-  pull_request:
 
 jobs:
   build-and-publish:
     name: Java Gradle Docker
-    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@feature/jib-tags
+    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@1.57.0
     with:
       java-version: 17
       docker-publisher: "bakdata"

@@ -1,16 +1,3 @@
-import com.bakdata.gradle.JibImageConfigExtension
-
-buildscript {
-    repositories {
-        maven {
-            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
-        }
-    }
-    dependencies {
-        classpath("com.bakdata.gradle:jib:1.6.2-SNAPSHOT")
-    }
-}
-
 description = "Kafka Streams application that analyzes dead letters in your Kafka cluster"
 
 plugins {
@@ -19,10 +6,9 @@ plugins {
     id("com.bakdata.sonar") version "1.6.1"
     id("com.bakdata.sonatype") version "1.6.1"
     id("io.freefair.lombok") version "8.4"
-//    id("com.bakdata.jib") version "1.6.1"
+    id("com.bakdata.jib") version "1.7.0"
     id("com.bakdata.avro") version "1.4.0"
 }
-apply(plugin = "com.bakdata.jib")
 
 allprojects {
     group = "com.bakdata.kafka"
@@ -90,6 +76,6 @@ avro {
     setFieldVisibility("PRIVATE")
 }
 
-configure<JibImageConfigExtension> {
+jibImage {
     name.set("kafka-dead-letter-analyzer")
 }

@@ -34,7 +34,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.streams.kstream.Repartitioned;
 import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
 import org.apache.kafka.streams.processor.api.FixedKeyProcessorSupplier;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
@@ -155,7 +154,7 @@ class DeadLetterAnalyzerTopology {
 
     private ImprovedKStream<ErrorKey, Result> aggregate(
             final ImprovedKStream<?, KeyedDeadLetterWithContext> withContext) {
-        final Serde<ErrorKey> errorKeySerde = this.configureForKeys(getSpecificAvroSerde());
+        final Preconfigured<Serde<ErrorKey>> errorKeySerde = getSpecificAvroSerde();
         final StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> statisticsStore =
                 this.createStatisticsStore(errorKeySerde);
 
@@ -163,7 +162,8 @@ class DeadLetterAnalyzerTopology {
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KErrorStream<ErrorKey, DeadLetterWithContext, ErrorKey, Result> processedAggregations = analyzed
                 .repartition(
-                        Repartitioned.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME).withKeySerde(errorKeySerde))
+                        ConfiguredRepartitioned.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME)
+                                .withKeySerde(errorKeySerde))
                 .processValuesCapturingErrors(
                         new FixedKeyProcessorSupplier<>() {
                             @Override
@@ -187,9 +187,9 @@ class DeadLetterAnalyzerTopology {
     }
 
     private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
-            final Serde<ErrorKey> errorKeySerde) {
+            final Preconfigured<? extends Serde<ErrorKey>> errorKeySerde) {
         final KeyValueBytesStoreSupplier statisticsStoreSupplier = Stores.inMemoryKeyValueStore(STATISTICS_STORE_NAME);
-        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde,
+        return Stores.keyValueStoreBuilder(statisticsStoreSupplier, this.configureForKeys(errorKeySerde),
                 this.configureForValues(getSpecificAvroSerde()));
     }
 
