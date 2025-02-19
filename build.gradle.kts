@@ -2,11 +2,11 @@ description = "Kafka Streams application that analyzes dead letters in your Kafk
 
 plugins {
     `java-library`
-    id("com.bakdata.release") version "1.4.0"
-    id("com.bakdata.sonar") version "1.4.2"
-    id("com.bakdata.sonatype") version "1.4.1"
-    id("io.freefair.lombok") version "8.4"
-    id("com.bakdata.jib") version "1.5.2"
+    id("com.bakdata.release") version "1.7.1"
+    id("com.bakdata.sonar") version "1.7.1"
+    id("com.bakdata.sonatype") version "1.7.1"
+    id("io.freefair.lombok") version "8.11"
+    id("com.bakdata.jib") version "1.7.1"
     id("com.bakdata.avro") version "1.4.0"
 }
 
@@ -21,6 +21,7 @@ allprojects {
     repositories {
         mavenCentral()
         maven(url = "https://packages.confluent.io/maven/")
+        maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots")
     }
 }
 
@@ -47,7 +48,7 @@ dependencies {
     implementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    val streamsBootstrapVersion = "3.4.0"
+    val streamsBootstrapVersion = "3.5.3-SNAPSHOT"
     api(
         group = "com.bakdata.kafka",
         name = "streams-bootstrap-large-messages",
@@ -55,9 +56,9 @@ dependencies {
     )
     implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli", version = streamsBootstrapVersion)
     implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.3.0")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.9.1")
+    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.10.0")
     implementation(group = "org.jooq", name = "jool", version = "0.9.15")
-    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.6.0")
+    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.6.1")
     val log4jVersion = "2.24.3"
     implementation(group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = log4jVersion)
 
