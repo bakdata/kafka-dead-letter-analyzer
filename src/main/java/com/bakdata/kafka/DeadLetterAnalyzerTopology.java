@@ -97,19 +97,19 @@ class DeadLetterAnalyzerTopology {
     }
 
     void buildTopology() {
-        final ImprovedKStream<Object, DeadLetter> allDeadLetters = this.streamDeadLetters();
-        final ImprovedKStream<Object, KeyedDeadLetterWithContext> deadLettersWithContext =
+        final KStreamX<Object, DeadLetter> allDeadLetters = this.streamDeadLetters();
+        final KStreamX<Object, KeyedDeadLetterWithContext> deadLettersWithContext =
                 enrichWithContext(allDeadLetters);
         deadLettersWithContext
                 .selectKey((k, v) -> v.extractElasticKey())
                 .mapValues(KeyedDeadLetterWithContext::format)
                 .toOutputTopic();
 
-        final ImprovedKStream<ErrorKey, Result> aggregated = this.aggregate(deadLettersWithContext);
+        final KStreamX<ErrorKey, Result> aggregated = this.aggregate(deadLettersWithContext);
         aggregated
                 .mapValues((errorKey, result) -> result.toFullErrorStatistics(errorKey))
                 .selectKey((k, v) -> toElasticKey(k))
-                .toOutputTopic(STATS_TOPIC_LABEL, ConfiguredProduced.valueSerde(getSpecificAvroSerde()));
+                .toOutputTopic(STATS_TOPIC_LABEL, ProducedX.valueSerde(getSpecificAvroSerde()));
         aggregated
                 .flatMapValues(Result::getExamples)
                 .mapValues(DeadLetterAnalyzerTopology::toErrorExample)
@@ -117,44 +117,43 @@ class DeadLetterAnalyzerTopology {
                 .toOutputTopic(EXAMPLES_TOPIC_LABEL);
     }
 
-    private ImprovedKStream<Object, DeadLetter> streamDeadLetters() {
-        final ImprovedKStream<Object, Object> rawDeadLetters = this.builder.streamInputPattern(
-                ConfiguredConsumed.with(getInputSerde(), getInputSerde()));
+    private KStreamX<Object, DeadLetter> streamDeadLetters() {
+        final KStreamX<Object, Object> rawDeadLetters = this.builder.streamInputPattern(
+                ConsumedX.with(getInputSerde(), getInputSerde()));
 
-        final ImprovedKStream<Object, DeadLetter> streamDeadLetters = rawDeadLetters
+        final KStreamX<Object, DeadLetter> streamDeadLetters = rawDeadLetters
                 .flatMapValues(DeadLetterAnalyzerTopology::getDeadLetters);
 
-        final ImprovedKStream<Object, Object> rawStreamHeaderDeadLetters = rawDeadLetters
+        final KStreamX<Object, Object> rawStreamHeaderDeadLetters = rawDeadLetters
                 .processValues(() -> new HeaderFilter<>(EXCEPTION_CLASS_NAME));
-        final ImprovedKStream<Object, DeadLetter> streamHeaderDeadLetters =
+        final KStreamX<Object, DeadLetter> streamHeaderDeadLetters =
                 streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser());
 
-        final ImprovedKStream<Object, Object> rawConnectDeadLetters = rawDeadLetters
+        final KStreamX<Object, Object> rawConnectDeadLetters = rawDeadLetters
                 .processValues(() -> new HeaderFilter<>(ERROR_HEADER_CONNECTOR_NAME));
-        final ImprovedKStream<Object, DeadLetter> connectDeadLetters =
+        final KStreamX<Object, DeadLetter> connectDeadLetters =
                 streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser());
 
         return streamDeadLetters.merge(connectDeadLetters)
                 .merge(streamHeaderDeadLetters);
     }
 
-    private static <K> void toDeadLetterTopic(final ImprovedKStream<K, DeadLetter> connectDeadLetters) {
+    private static <K> void toDeadLetterTopic(final KStreamX<K, DeadLetter> connectDeadLetters) {
         connectDeadLetters
                 .selectKey((k, v) -> ErrorUtil.toString(k))
                 .toErrorTopic();
     }
 
-    private ImprovedKStream<ErrorKey, Result> aggregate(
-            final ImprovedKStream<?, KeyedDeadLetterWithContext> withContext) {
+    private KStreamX<ErrorKey, Result> aggregate(final KStreamX<?, KeyedDeadLetterWithContext> withContext) {
         final Preconfigured<Serde<ErrorKey>> errorKeySerde = getSpecificAvroSerde();
         final StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> statisticsStore =
                 this.createStatisticsStore(errorKeySerde);
 
-        final ImprovedKStream<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
+        final KStreamX<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
         final KErrorStream<ErrorKey, DeadLetterWithContext, ErrorKey, Result> processedAggregations = analyzed
                 .repartition(
-                        ConfiguredRepartitioned.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME)
+                        RepartitionedX.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME)
                                 .withKeySerde(errorKeySerde))
                 .processValuesCapturingErrors(
                         new FixedKeyProcessorSupplier<>() {
@@ -170,7 +169,7 @@ class DeadLetterAnalyzerTopology {
                         }
                 );
 
-        final ImprovedKStream<ErrorKey, DeadLetter> aggregationDeadLetters =
+        final KStreamX<ErrorKey, DeadLetter> aggregationDeadLetters =
                 processedAggregations.errors()
                         .processValues(AvroDeadLetterConverter.asProcessor("Error aggregating dead letters"));
         toDeadLetterTopic(aggregationDeadLetters);
@@ -184,13 +183,13 @@ class DeadLetterAnalyzerTopology {
         return this.builder.stores().keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde, getSpecificAvroSerde());
     }
 
-    private static <K> ImprovedKStream<K, KeyedDeadLetterWithContext> enrichWithContext(
-            final ImprovedKStream<K, ? extends DeadLetter> allDeadLetters) {
-        final ImprovedKStream<K, ProcessedValue<DeadLetter, KeyedDeadLetterWithContext>> processedDeadLetters =
+    private static <K> KStreamX<K, KeyedDeadLetterWithContext> enrichWithContext(
+            final KStreamX<K, ? extends DeadLetter> allDeadLetters) {
+        final KStreamX<K, ProcessedValue<DeadLetter, KeyedDeadLetterWithContext>> processedDeadLetters =
                 allDeadLetters.processValues(
                         ErrorCapturingValueProcessor.captureErrors(ContextEnricher::new));
 
-        final ImprovedKStream<K, DeadLetter> analysisDeadLetters =
+        final KStreamX<K, DeadLetter> analysisDeadLetters =
                 processedDeadLetters.flatMapValues(ProcessedValue::getErrors)
                         .processValues(AvroDeadLetterConverter.asProcessor("Error analyzing dead letter"));
         toDeadLetterTopic(analysisDeadLetters);
@@ -198,12 +197,12 @@ class DeadLetterAnalyzerTopology {
         return processedDeadLetters.flatMapValues(ProcessedValue::getValues);
     }
 
-    private static <K> ImprovedKStream<K, DeadLetter> streamHeaderDeadLetters(final ImprovedKStream<K, Object> input,
+    private static <K> KStreamX<K, DeadLetter> streamHeaderDeadLetters(final KStreamX<K, Object> input,
             final DeadLetterParser converterFactory) {
-        final ImprovedKStream<K, ProcessedValue<Object, DeadLetter>> processedInput = input.processValues(
+        final KStreamX<K, ProcessedValue<Object, DeadLetter>> processedInput = input.processValues(
                 ErrorCapturingValueProcessor.captureErrors(
                         () -> new DeadLetterParserTransformer<>(converterFactory)));
-        final ImprovedKStream<K, DeadLetter> deadLetters =
+        final KStreamX<K, DeadLetter> deadLetters =
                 processedInput.flatMapValues(ProcessedValue::getErrors)
                         .processValues(
                                 AvroDeadLetterConverter.asProcessor("Error converting errors to dead letters"));
