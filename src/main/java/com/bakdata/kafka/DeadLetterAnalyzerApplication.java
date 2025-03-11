@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 bakdata
+ * Copyright (c) 2025 bakdata
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -35,11 +35,12 @@ import org.apache.kafka.common.serialization.Serdes.StringSerde;
 public final class DeadLetterAnalyzerApplication implements LargeMessageStreamsApp {
 
     public static void main(final String[] args) {
-        KafkaApplication.startApplication(new SimpleKafkaStreamsApplication(DeadLetterAnalyzerApplication::new), args);
+        KafkaApplication.startApplication(new SimpleKafkaStreamsApplication<>(DeadLetterAnalyzerApplication::new),
+                args);
     }
 
     @Override
-    public void buildTopology(final TopologyBuilder topologyBuilder) {
+    public void buildTopology(final StreamsBuilderX topologyBuilder) {
         new DeadLetterAnalyzerTopology(topologyBuilder).buildTopology();
     }
 
