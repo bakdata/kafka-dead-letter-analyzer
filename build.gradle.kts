@@ -42,23 +42,18 @@ publication {
 
 
 dependencies {
-    val confluentVersion: String by project
-    implementation(group = "io.confluent", name = "kafka-streams-avro-serde", version = confluentVersion)
-    val kafkaVersion: String by project
-    implementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
+    implementation(group = "io.confluent", name = "kafka-streams-avro-serde")
+    implementation(group = "org.apache.kafka", name = "connect-runtime") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
     val streamsBootstrapVersion = "3.6.2-SNAPSHOT"
-    api(
-        group = "com.bakdata.kafka",
-        name = "streams-bootstrap-large-messages",
-        version = streamsBootstrapVersion
-    )
-    implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli", version = streamsBootstrapVersion)
+    api(platform("com.bakdata.kafka:streams-bootstrap-bom:$streamsBootstrapVersion"))
+    api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages")
+    implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli")
     implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.3.0")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.10.1")
+    implementation(group = "com.bakdata.kafka", name = "large-message-serde")
     implementation(group = "org.jooq", name = "jool", version = "0.9.15")
-    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.6.1")
+    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro")
     val log4jVersion = "2.24.3"
     implementation(group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = log4jVersion)
 
@@ -66,7 +61,7 @@ dependencies {
     testRuntimeOnly(group = "org.junit.jupiter", name = "junit-jupiter-engine", version = junitVersion)
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-api", version = junitVersion)
     testImplementation(group = "org.junit.jupiter", name = "junit-jupiter-params", version = junitVersion)
-    testImplementation(group = "com.bakdata.kafka", name = "streams-bootstrap-test", version = streamsBootstrapVersion)
+    testImplementation(group = "com.bakdata.kafka", name = "streams-bootstrap-test")
     testImplementation(group = "org.assertj", name = "assertj-core", version = "3.27.2")
 }
 

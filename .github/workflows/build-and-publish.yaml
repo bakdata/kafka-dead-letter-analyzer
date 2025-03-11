@@ -3,7 +3,9 @@ name: Build and Publish
 on:
   push:
     tags: ["**"]
-    branches: ["**"]
+    branches:
+      - master
+  pull_request:
 
 jobs:
   build-and-publish:
