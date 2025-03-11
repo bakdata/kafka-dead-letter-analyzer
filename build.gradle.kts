@@ -4,10 +4,10 @@ plugins {
     `java-library`
     id("com.bakdata.release") version "1.7.1"
     id("com.bakdata.sonar") version "1.7.1"
-    id("com.bakdata.sonatype") version "1.7.1"
-    id("io.freefair.lombok") version "8.11"
+    id("com.bakdata.sonatype") version "1.9.0"
+    id("io.freefair.lombok") version "8.12.2.1"
     id("com.bakdata.jib") version "1.7.1"
-    id("com.bakdata.avro") version "1.4.0"
+    id("com.bakdata.avro") version "1.5.0"
 }
 
 allprojects {
@@ -25,13 +25,13 @@ allprojects {
     }
 }
 
-configure<JavaPluginExtension> {
+java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
-configure<com.bakdata.gradle.SonatypeSettings> {
+publication {
     developers {
         developer {
             name.set("Philipp Schirmer")
@@ -48,7 +48,7 @@ dependencies {
     implementation(group = "org.apache.kafka", name = "connect-runtime", version = kafkaVersion) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    val streamsBootstrapVersion = "3.5.3-SNAPSHOT"
+    val streamsBootstrapVersion = "3.6.2-SNAPSHOT"
     api(
         group = "com.bakdata.kafka",
         name = "streams-bootstrap-large-messages",
@@ -56,7 +56,7 @@ dependencies {
     )
     implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli", version = streamsBootstrapVersion)
     implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.3.0")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.10.0")
+    implementation(group = "com.bakdata.kafka", name = "large-message-serde", version = "2.10.1")
     implementation(group = "org.jooq", name = "jool", version = "0.9.15")
     avroApi(group = "com.bakdata.kafka", name = "error-handling-avro", version = "1.6.1")
     val log4jVersion = "2.24.3"

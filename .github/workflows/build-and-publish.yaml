@@ -8,11 +8,10 @@ on:
 jobs:
   build-and-publish:
     name: Java Gradle Docker
-    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@1.62.0
+    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@1.64.0
     with:
       java-version: 17
       docker-publisher: "bakdata"
-      gradle-refresh-dependencies: true
     secrets:
       docker-username: ${{ secrets.DOCKERHUB_USERNAME }}
       docker-password: ${{ secrets.DOCKERHUB_TOKEN }}

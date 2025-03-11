@@ -48,7 +48,7 @@ class DeadLetterAnalyzerTopology {
     static final String STATS_TOPIC_LABEL = "stats";
     private static final String REPARTITION_NAME = "analyzed";
     private static final String STATISTICS_STORE_NAME = "statistics";
-    private final @NonNull TopologyBuilder builder;
+    private final @NonNull StreamsBuilderX builder;
 
     static <T extends SpecificRecord> Preconfigured<Serde<T>> getSpecificAvroSerde() {
         final Serde<T> serde = new SpecificAvroSerde<>();
@@ -151,7 +151,7 @@ class DeadLetterAnalyzerTopology {
 
         final KStreamX<ErrorKey, DeadLetterWithContext> analyzed = withContext.selectKey((k, v) -> v.getKey())
                 .mapValues(KeyedDeadLetterWithContext::getValue);
-        final KErrorStream<ErrorKey, DeadLetterWithContext, ErrorKey, Result> processedAggregations = analyzed
+        final KErrorStreamX<ErrorKey, DeadLetterWithContext, ErrorKey, Result> processedAggregations = analyzed
                 .repartition(
                         RepartitionedX.<ErrorKey, DeadLetterWithContext>as(REPARTITION_NAME)
                                 .withKeySerde(errorKeySerde))
