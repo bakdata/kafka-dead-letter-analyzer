@@ -114,11 +114,6 @@ class DeadLetterAnalyzerTopologyTest {
         return new ProducerRecord<>(topic, partition, timestamp, key, deserializedValue, headers);
     }
 
-    private static <T> Preconfigured<Serde<T>> getLargeMessageSerde() {
-        final Serde<T> valueSerde = new LargeMessageSerde<>();
-        return Preconfigured.create(valueSerde);
-    }
-
     @Test
     void shouldProcessDeadLetter() {
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
@@ -591,6 +586,11 @@ class DeadLetterAnalyzerTopologyTest {
         final Preconfigured<Serde<FullDeadLetterWithContext>> valueSerde = getLargeMessageSerde();
         return this.topology.streamOutput(TOPIC_CONFIG.getOutputTopic())
                 .configureWithValueSerde(valueSerde);
+    }
+
+    private static <T> Preconfigured<Serde<T>> getLargeMessageSerde() {
+        final Serde<T> valueSerde = new LargeMessageSerde<>();
+        return Preconfigured.create(valueSerde);
     }
 
     private <T> T configureForValues(final Preconfigured<T> preconfigured) {
