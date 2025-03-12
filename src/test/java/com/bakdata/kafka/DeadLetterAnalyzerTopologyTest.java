@@ -114,6 +114,11 @@ class DeadLetterAnalyzerTopologyTest {
         return new ProducerRecord<>(topic, partition, timestamp, key, deserializedValue, headers);
     }
 
+    private static <T> Preconfigured<Serde<T>> getLargeMessageSerde() {
+        final Serde<T> valueSerde = new LargeMessageSerde<>();
+        return Preconfigured.create(valueSerde);
+    }
+
     @Test
     void shouldProcessDeadLetter() {
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
@@ -399,7 +404,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
                 .setDescription("Error in stage VALUE_CONVERTER (org.apache.kafka.connect.json.JsonConverter) in "
-                                + "my-connector[2]")
+                        + "my-connector[2]")
                 .setPartition(1)
                 .setTopic("my-topic")
                 .setOffset(10L)
@@ -538,7 +543,7 @@ class DeadLetterAnalyzerTopologyTest {
     @Test
     void shouldReadAvroKey() {
         final TestInput<SpecificRecord, SpecificRecord> input =
-                this.getStreamsInput(this.configureForKeys(DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
+                this.getStreamsInput(DeadLetterAnalyzerTopology.getSpecificAvroSerde());
         final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
                 this.getProcessedDeadLetters();
         final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
@@ -577,68 +582,59 @@ class DeadLetterAnalyzerTopologyTest {
         this.assertNoDeadLetters();
     }
 
-    private Configurator getConfigurator() {
-        return TestTopologyFactory.createConfigurator(this.topology);
-    }
-
     private void assertNoDeadLetters() {
         final Iterable<ProducerRecord<String, DeadLetter>> deadLetters = this.getDeadLetters();
         this.softly.assertThat(seq(deadLetters).toList()).isEmpty();
     }
 
     private TestOutput<String, FullDeadLetterWithContext> getProcessedDeadLetters() {
-        final Serde<FullDeadLetterWithContext> valueSerde = this.getLargeMessageSerde();
+        final Preconfigured<Serde<FullDeadLetterWithContext>> valueSerde = getLargeMessageSerde();
         return this.topology.streamOutput(TOPIC_CONFIG.getOutputTopic())
-                .withValueSerde(valueSerde);
-    }
-
-    private <T> Serde<T> getLargeMessageSerde() {
-        final Serde<T> valueSerde = new LargeMessageSerde<>();
-        final Preconfigured<Serde<T>> preconfigured = Preconfigured.create(valueSerde);
-        return this.configureForValues(preconfigured);
-    }
-
-    private <T> T configureForKeys(final Preconfigured<T> preconfigured) {
-        return this.getConfigurator().configureForKeys(preconfigured);
+                .configureWithValueSerde(valueSerde);
     }
 
     private <T> T configureForValues(final Preconfigured<T> preconfigured) {
-        return this.getConfigurator().configureForValues(preconfigured);
+        return this.topology.createConfigurator().configureForValues(preconfigured);
     }
 
     private TestOutput<String, FullErrorStatistics> getStatistics() {
         return this.topology.streamOutput(DeadLetterAnalyzerTopology.getStatsTopic(TOPIC_CONFIG))
-                .withValueSerde(this.configureForValues(DeadLetterAnalyzerTopology.getSpecificAvroSerde()));
+                .configureWithValueSerde(DeadLetterAnalyzerTopology.getSpecificAvroSerde());
     }
 
     private TestOutput<String, ErrorExample> getExamples() {
-        final Serde<ErrorExample> valueSerde = this.getLargeMessageSerde();
+        final Preconfigured<Serde<ErrorExample>> valueSerde = getLargeMessageSerde();
         return this.topology.streamOutput(DeadLetterAnalyzerTopology.getExamplesTopic(TOPIC_CONFIG))
-                .withValueSerde(valueSerde);
+                .configureWithValueSerde(valueSerde);
     }
 
     private Seq<ProducerRecord<String, DeadLetter>> getDeadLetters() {
-        final Serde<DeadLetter> valueSerde = this.getLargeMessageSerde();
+        final Preconfigured<Serde<DeadLetter>> valueSerde = getLargeMessageSerde();
         final TestOutput<String, byte[]> output = this.topology.streamOutput(TOPIC_CONFIG.getErrorTopic())
                 .withValueSerde(Serdes.ByteArray());
         return seq(output)
                 // Record has already been consumed by the analyzer and headers are modified.
                 // This only happens in the TestDriver because record headers are reused.
                 // In Kafka this does not happen because the headers are stored server-side.
-                .map(record -> deserializeNonBacked(valueSerde, record));
+                .map(record -> deserializeNonBacked(this.configureForValues(valueSerde), record));
     }
 
     private <K> TestInput<K, SpecificRecord> getStreamsInput(final Serde<K> keySerde) {
+        return this.getStreamsInput(Preconfigured.create(keySerde));
+    }
+
+    private <K> TestInput<K, SpecificRecord> getStreamsInput(final Preconfigured<? extends Serde<K>> keySerde) {
         return this.getInput(keySerde, "my-stream-dead-letter-topic");
     }
 
-    private <K> TestInput<K, SpecificRecord> getInput(final Serde<K> keySerde, final String topic) {
+    private <K> TestInput<K, SpecificRecord> getInput(final Preconfigured<? extends Serde<K>> keySerde,
+            final String topic) {
         return this.topology.input(topic)
-                .withValueSerde(this.configureForValues(DeadLetterAnalyzerTopology.getSpecificAvroSerde()))
-                .withKeySerde(keySerde);
+                .configureWithValueSerde(DeadLetterAnalyzerTopology.getSpecificAvroSerde())
+                .configureWithKeySerde(keySerde);
     }
 
     private <K> TestInput<K, SpecificRecord> getConnectInput(final Serde<K> keySerde) {
-        return this.getInput(keySerde, "my-connect-dead-letter-topic");
+        return this.getInput(Preconfigured.create(keySerde), "my-connect-dead-letter-topic");
     }
 }
