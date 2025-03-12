@@ -48,8 +48,8 @@ dependencies {
     }
     val streamsBootstrapVersion = "3.6.2-SNAPSHOT"
     api(platform("com.bakdata.kafka:streams-bootstrap-bom:$streamsBootstrapVersion"))
-    implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages")
-    api(group = "com.bakdata.kafka", name = "streams-bootstrap-cli")
+    api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages")
+    implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli")
     implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.3.0")
     implementation(group = "com.bakdata.kafka", name = "large-message-serde")
     implementation(group = "org.jooq", name = "jool", version = "0.9.15")
