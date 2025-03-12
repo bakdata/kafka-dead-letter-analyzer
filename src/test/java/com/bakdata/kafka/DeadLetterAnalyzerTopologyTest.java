@@ -616,7 +616,7 @@ class DeadLetterAnalyzerTopologyTest {
                 // Record has already been consumed by the analyzer and headers are modified.
                 // This only happens in the TestDriver because record headers are reused.
                 // In Kafka this does not happen because the headers are stored server-side.
-                .map(record -> deserializeNonBacked(this.configureForValues(valueSerde), record));
+                .map(rekord -> deserializeNonBacked(this.configureForValues(valueSerde), rekord));
     }
 
     private <K> TestInput<K, SpecificRecord> getStreamsInput(final Serde<K> keySerde) {
