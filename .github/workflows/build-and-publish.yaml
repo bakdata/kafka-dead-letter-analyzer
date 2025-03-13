@@ -14,7 +14,6 @@ jobs:
     with:
       java-version: 17
       docker-publisher: "bakdata"
-      gradle-refresh-dependencies: true
     secrets:
       docker-username: ${{ secrets.DOCKERHUB_USERNAME }}
       docker-password: ${{ secrets.DOCKERHUB_TOKEN }}
