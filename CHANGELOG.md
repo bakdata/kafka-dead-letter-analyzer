@@ -1,8 +1,16 @@
 # Change Log
 
-## [2.1.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.1.0) (2025-01-14)
-[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.1.0...2.1.0)
+## [2.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.2.0) (2025-03-14)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.2.0...2.2.0)
 
+
+## [2.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.2.0) (2025-03-14)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.1.0...2.2.0)
+
+**Merged pull requests:**
+
+- Use improved KStreams [\#22](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/22) ([@philipp94831](https://github.com/philipp94831))
+- Use new Jib plugin [\#21](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/21) ([@philipp94831](https://github.com/philipp94831))
 
 ## [2.1.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.1.0) (2025-01-14)
 [View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.0.0...2.1.0)
@@ -56,7 +64,7 @@
 **Merged pull requests:**
 
 - Support exceptions with null message [\#5](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/5) ([@philipp94831](https://github.com/philipp94831))
-- Fix azure pipelines default branch name [\#3](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/3) ([@JakobEdding](https://github.com/JakobEdding))
+- Fix azure pipelines default branch name [\#3](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/3) ([@jkbe](https://github.com/jkbe))
 
 ## [1.0.1](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/1.0.1) (2022-05-12)
 [View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/1.0.0...1.0.1)
