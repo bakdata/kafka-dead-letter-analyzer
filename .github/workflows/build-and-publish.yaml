@@ -3,12 +3,14 @@ name: Build and Publish
 on:
   push:
     tags: ["**"]
-    branches: ["**"]
+    branches:
+      - main
+  pull_request:
 
 jobs:
   build-and-publish:
     name: Java Gradle Docker
-    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@1.55.0
+    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@1.64.0
     with:
       java-version: 17
       docker-publisher: "bakdata"
