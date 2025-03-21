@@ -42,11 +42,13 @@ publication {
 
 
 dependencies {
-    implementation(group = "io.confluent", name = "kafka-streams-avro-serde")
+    implementation(group = "io.confluent", name = "kafka-streams-avro-serde") {
+        exclude(group = "org.apache.kafka", module = "kafka-clients")
+    }
     implementation(group = "org.apache.kafka", name = "connect-runtime") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    val streamsBootstrapVersion = "4.1.0"
+    val streamsBootstrapVersion = "4.1.1"
     api(platform("com.bakdata.kafka:streams-bootstrap-bom:$streamsBootstrapVersion"))
     api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages")
     implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli")
