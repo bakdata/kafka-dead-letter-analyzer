@@ -42,9 +42,7 @@ publication {
 
 
 dependencies {
-    implementation(group = "io.confluent", name = "kafka-streams-avro-serde") {
-        exclude(group = "org.apache.kafka", module = "kafka-clients")
-    }
+    implementation(group = "io.confluent", name = "kafka-streams-avro-serde")
     implementation(group = "org.apache.kafka", name = "connect-runtime") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
