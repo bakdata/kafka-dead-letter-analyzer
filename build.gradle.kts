@@ -42,18 +42,20 @@ publication {
 
 
 dependencies {
-    implementation(group = "io.confluent", name = "kafka-streams-avro-serde")
+    implementation(group = "io.confluent", name = "kafka-streams-avro-serde") {
+        exclude(group = "org.apache.kafka", module = "kafka-clients")
+    }
     implementation(group = "org.apache.kafka", name = "connect-runtime") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    val streamsBootstrapVersion = "4.0.0"
+    val streamsBootstrapVersion = "4.1.0"
     api(platform("com.bakdata.kafka:streams-bootstrap-bom:$streamsBootstrapVersion"))
     api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages")
     implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli")
-    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.3.0")
+    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.4.0")
     implementation(group = "com.bakdata.kafka", name = "large-message-serde")
     implementation(group = "org.jooq", name = "jool", version = "0.9.15")
-    avroApi(platform("com.bakdata.kafka:error-handling-bom:1.7.0"))
+    avroApi(platform("com.bakdata.kafka:error-handling-bom:1.8.0"))
     avroApi(group = "com.bakdata.kafka", name = "error-handling-avro")
     val log4jVersion = "2.24.3"
     implementation(group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = log4jVersion)
