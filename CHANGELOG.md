@@ -1,8 +1,15 @@
 # Change Log
 
-## [2.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.2.0) (2025-03-14)
-[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.2.0...2.2.0)
+## [2.2.1](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.2.1) (2025-03-21)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.2.1...2.2.1)
 
+
+## [2.2.1](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.2.1) (2025-03-21)
+[View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.2.0...2.2.1)
+
+**Merged pull requests:**
+
+- Upgrade to Kafka 3.9 [\#23](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/23) ([@philipp94831](https://github.com/philipp94831))
 
 ## [2.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/2.2.0) (2025-03-14)
 [View commits](https://github.com/bakdata/kafka-dead-letter-analyzer/compare/2.1.0...2.2.0)
