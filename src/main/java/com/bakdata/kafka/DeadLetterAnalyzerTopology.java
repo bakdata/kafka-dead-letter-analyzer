@@ -27,6 +27,13 @@ package com.bakdata.kafka;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 
+import com.bakdata.kafka.streams.StreamsTopicConfig;
+import com.bakdata.kafka.streams.kstream.ConsumedX;
+import com.bakdata.kafka.streams.kstream.KErrorStreamX;
+import com.bakdata.kafka.streams.kstream.KStreamX;
+import com.bakdata.kafka.streams.kstream.ProducedX;
+import com.bakdata.kafka.streams.kstream.RepartitionedX;
+import com.bakdata.kafka.streams.kstream.StreamsBuilderX;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.List;
 import java.util.Set;
