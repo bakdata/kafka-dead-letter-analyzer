@@ -48,6 +48,9 @@ dependencies {
     implementation(group = "org.apache.kafka", name = "connect-runtime") {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
+    api(platform("com.bakdata.kafka:kafka-bom:1.2.1")) // Central repository requires this as a direct dependency to resolve versions
+    api(platform("com.bakdata.kafka:large-message-bom:3.1.0")) // Central repository requires this as a direct dependency to resolve versions
+    api(platform("com.bakdata.kafka:error-handling-bom:2.0.0")) // Central repository requires this as a direct dependency to resolve versions
     val streamsBootstrapVersion = "5.1.0"
     api(platform("com.bakdata.kafka:streams-bootstrap-bom:$streamsBootstrapVersion"))
     api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages")
