@@ -186,7 +186,8 @@ class DeadLetterAnalyzerTopology {
 
     private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
             final Preconfigured<? extends Serde<ErrorKey>> errorKeySerde) {
-        final KeyValueBytesStoreSupplier statisticsStoreSupplier = Stores.inMemoryKeyValueStore(STATISTICS_STORE_NAME);
+        final KeyValueBytesStoreSupplier statisticsStoreSupplier =
+                Stores.persistentKeyValueStore(STATISTICS_STORE_NAME);
         return this.builder.stores().keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde, getSpecificAvroSerde());
     }
 
