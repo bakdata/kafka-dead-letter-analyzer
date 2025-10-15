@@ -6,7 +6,7 @@ largeMessage-bom = { group = "com.bakdata.kafka", name = "large-message-bom", ve
 largeMessage-serde = { group = "com.bakdata.kafka", name = "large-message-serde" }
 errorHandling-bom = { group = "com.bakdata.kafka", name = "error-handling-bom", version = "2.0.0" }
 errorHandling-avro = { group = "com.bakdata.kafka", name = "error-handling-avro" }
-streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "5.1.0" }
+streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "5.1.2" }
 streamsBootstrap-largeMessage = { group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages" }
 streamsBootstrap-cli = { group = "com.bakdata.kafka", name = "streams-bootstrap-cli" }
 bruteForce-serde = { group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.4.0" }
