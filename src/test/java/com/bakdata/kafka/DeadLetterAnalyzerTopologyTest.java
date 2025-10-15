@@ -51,6 +51,11 @@ import static org.jooq.lambda.Seq.seq;
 import com.bakdata.fluent_kafka_streams_tests.TestInput;
 import com.bakdata.fluent_kafka_streams_tests.TestOutput;
 import com.bakdata.fluent_kafka_streams_tests.junit5.TestTopologyExtension;
+import com.bakdata.kafka.streams.ConfiguredStreamsApp;
+import com.bakdata.kafka.streams.StreamsApp;
+import com.bakdata.kafka.streams.StreamsAppConfiguration;
+import com.bakdata.kafka.streams.StreamsTopicConfig;
+import com.bakdata.kafka.streams.TestTopologyFactory;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -90,7 +95,8 @@ class DeadLetterAnalyzerTopologyTest {
     private SoftAssertions softly;
 
     private static ConfiguredStreamsApp<StreamsApp> createApp() {
-        return new ConfiguredStreamsApp<>(new DeadLetterAnalyzerApplication(), new AppConfiguration<>(TOPIC_CONFIG));
+        return new ConfiguredStreamsApp<>(new DeadLetterAnalyzerApplication(),
+                new StreamsAppConfiguration(TOPIC_CONFIG));
     }
 
     private static LocalDateTime parseDateTime(final String dateTime) {

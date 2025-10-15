@@ -24,6 +24,12 @@
 
 package com.bakdata.kafka;
 
+import com.bakdata.kafka.streams.KafkaStreamsApplication;
+import com.bakdata.kafka.streams.LargeMessageStreamsApp;
+import com.bakdata.kafka.streams.SerdeConfig;
+import com.bakdata.kafka.streams.SimpleKafkaStreamsApplication;
+import com.bakdata.kafka.streams.StreamsAppConfiguration;
+import com.bakdata.kafka.streams.kstream.StreamsBuilderX;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,8 +41,10 @@ import org.apache.kafka.common.serialization.Serdes.StringSerde;
 public final class DeadLetterAnalyzerApplication implements LargeMessageStreamsApp {
 
     public static void main(final String[] args) {
-        KafkaApplication.startApplication(new SimpleKafkaStreamsApplication<>(DeadLetterAnalyzerApplication::new),
-                args);
+        try (final KafkaStreamsApplication<DeadLetterAnalyzerApplication> app = new SimpleKafkaStreamsApplication<>(
+                DeadLetterAnalyzerApplication::new)) {
+            app.startApplication(args);
+        }
     }
 
     @Override
@@ -58,8 +66,8 @@ public final class DeadLetterAnalyzerApplication implements LargeMessageStreamsA
     }
 
     @Override
-    public String getUniqueAppId(final StreamsTopicConfig streamsTopicConfig) {
-        return "dead-letter-analyzer-" + streamsTopicConfig.getOutputTopic();
+    public String getUniqueAppId(final StreamsAppConfiguration config) {
+        return "dead-letter-analyzer-" + config.getTopics().getOutputTopic();
     }
 
 }
