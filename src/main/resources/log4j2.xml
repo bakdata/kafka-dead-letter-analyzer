@@ -9,5 +9,29 @@
     <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>
+      <Logger additivity="false" level="warn" name="com.bakdata.kafka.LargeMessageSerdeConfig">
+          <AppenderRef ref="Console"/>
+      </Logger>
+      <Logger additivity="false" level="warn" name="com.bakdata.kafka.AbstractLargeMessageConfig">
+          <AppenderRef ref="Console"/>
+      </Logger>
+      <Logger additivity="false" level="warn" name="io.confluent.kafka.serializers">
+          <AppenderRef ref="Console"/>
+      </Logger>
+      <Logger additivity="false" level="warn" name="org.apache.kafka.clients.consumer.ConsumerConfig">
+          <AppenderRef ref="Console"/>
+      </Logger>
+      <Logger additivity="false" level="warn" name="org.apache.kafka.clients.producer.ProducerConfig">
+          <AppenderRef ref="Console"/>
+      </Logger>
+      <Logger additivity="false" level="warn" name="org.apache.kafka.clients.admin.AdminClientConfig">
+          <AppenderRef ref="Console"/>
+      </Logger>
+      <Logger additivity="false" level="warn" name="org.apache.kafka.streams.StreamsConfig">
+          <AppenderRef ref="Console"/>
+      </Logger>
+      <Logger additivity="false" level="warn" name="org.apache.kafka.common.config.AbstractConfig">
+          <AppenderRef ref="Console"/>
+      </Logger>
   </Loggers>
 </Configuration>
