@@ -2,12 +2,12 @@ description = "Kafka Streams application that analyzes dead letters in your Kafk
 
 plugins {
     `java-library`
-    id("com.bakdata.release") version "1.11.1"
-    id("com.bakdata.sonar") version "1.11.1"
-    id("com.bakdata.sonatype") version "1.11.1"
-    id("io.freefair.lombok") version "8.14.2"
-    id("com.bakdata.jib") version "1.11.1"
-    id("com.bakdata.avro") version "1.5.0"
+    alias(libs.plugins.release)
+    alias(libs.plugins.sonar)
+    alias(libs.plugins.sonatype)
+    alias(libs.plugins.lombok)
+    alias(libs.plugins.jib)
+    alias(libs.plugins.avro)
 }
 
 allprojects {
@@ -42,32 +42,28 @@ publication {
 
 
 dependencies {
-    implementation(group = "io.confluent", name = "kafka-streams-avro-serde") {
+    api(platform(libs.kafka.bom)) // Central repository requires this as a direct dependency to resolve versions
+    api(platform(libs.largeMessage.bom)) // Central repository requires this as a direct dependency to resolve versions
+    api(platform(libs.streamsBootstrap.bom))
+    api(libs.streamsBootstrap.largeMessage)
+    avroApi(platform(libs.errorHandling.bom))
+    avroApi(libs.errorHandling.avro)
+    implementation(libs.kafka.streams.avro.serde) {
         exclude(group = "org.apache.kafka", module = "kafka-clients")
     }
-    implementation(group = "org.apache.kafka", name = "connect-runtime") {
+    implementation(libs.kafka.connect.runtime) {
         exclude(group = "org.slf4j", module = "slf4j-log4j12")
     }
-    api(platform("com.bakdata.kafka:kafka-bom:1.2.1")) // Central repository requires this as a direct dependency to resolve versions
-    api(platform("com.bakdata.kafka:large-message-bom:3.1.0")) // Central repository requires this as a direct dependency to resolve versions
-    api(platform("com.bakdata.kafka:error-handling-bom:2.0.0")) // Central repository requires this as a direct dependency to resolve versions
-    val streamsBootstrapVersion = "5.1.0"
-    api(platform("com.bakdata.kafka:streams-bootstrap-bom:$streamsBootstrapVersion"))
-    api(group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages")
-    implementation(group = "com.bakdata.kafka", name = "streams-bootstrap-cli")
-    implementation(group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.4.0")
-    implementation(group = "com.bakdata.kafka", name = "large-message-serde")
-    implementation(group = "org.jooq", name = "jool", version = "0.9.15")
-    avroApi(platform("com.bakdata.kafka:error-handling-bom:2.0.0"))
-    avroApi(group = "com.bakdata.kafka", name = "error-handling-avro")
-    val log4jVersion = "2.25.1"
-    implementation(group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = log4jVersion)
+    implementation(libs.streamsBootstrap.cli)
+    implementation(libs.bruteForce.serde)
+    implementation(libs.largeMessage.serde)
+    implementation(libs.jool)
+    implementation(libs.log4j.slf4j2)
 
-    val junitVersion = "5.13.4"
-    testRuntimeOnly(group = "org.junit.platform", name = "junit-platform-launcher")
-    testImplementation(group = "org.junit.jupiter", name = "junit-jupiter", version = junitVersion)
-    testImplementation(group = "com.bakdata.kafka", name = "streams-bootstrap-test")
-    testImplementation(group = "org.assertj", name = "assertj-core", version = "3.27.6")
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.streamsBootstrap.test)
+    testImplementation(libs.assertj)
 }
 
 avro {
