@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.1](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.0.1) - 2025-10-15
+### What's changed
+
+* Fix publication by @philipp94831 in [#26](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/26)
+
+
+**Full Changelog**: https://github.com/bakdata/kafka-dead-letter-analyzer/compare/3.0.0...3.0.1
+
 ## [3.0.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.0.0) - 2025-10-15
 ### What's changed
 
