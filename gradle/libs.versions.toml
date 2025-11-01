@@ -1,12 +1,12 @@
 [libraries]
-kafka-bom = { group = "com.bakdata.kafka", name = "kafka-bom", version = "1.2.1" }
+kafka-bom = { group = "com.bakdata.kafka", name = "kafka-bom", version = "1.3.0" }
 kafka-streams-avro-serde = { group = "io.confluent", name = "kafka-streams-avro-serde" }
 kafka-connect-runtime = { group = "org.apache.kafka", name = "connect-runtime" }
 largeMessage-bom = { group = "com.bakdata.kafka", name = "large-message-bom", version = "3.1.0" }
 largeMessage-serde = { group = "com.bakdata.kafka", name = "large-message-serde" }
 errorHandling-bom = { group = "com.bakdata.kafka", name = "error-handling-bom", version = "2.0.0" }
 errorHandling-avro = { group = "com.bakdata.kafka", name = "error-handling-avro" }
-streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "5.1.0" }
+streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "5.1.2" }
 streamsBootstrap-largeMessage = { group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages" }
 streamsBootstrap-cli = { group = "com.bakdata.kafka", name = "streams-bootstrap-cli" }
 bruteForce-serde = { group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.4.0" }
