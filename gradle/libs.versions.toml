@@ -22,6 +22,6 @@ streamsBootstrap-test = { group = "com.bakdata.kafka", name = "streams-bootstrap
 release = { id = "com.bakdata.release", version = "1.11.1" }
 sonar = { id = "com.bakdata.sonar", version = "1.11.1" }
 sonatype = { id = "com.bakdata.sonatype", version = "1.11.1" }
-lombok = { id = "io.freefair.lombok", version = "8.14.2" }
+lombok = { id = "io.freefair.lombok", version = "9.2.0" }
 jib = { id = "com.bakdata.jib", version = "1.11.1" }
 avro = { id = "com.bakdata.avro", version = "1.5.0" }
