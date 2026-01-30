@@ -14,8 +14,8 @@ jool = { group = "org.jooq", name = "jool", version = "0.9.15" }
 log4j-slf4j2 = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = "2.25.3" }
 
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
-junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "6.0.0" }
-assertj = { group = "org.assertj", name = "assertj-core", version = "3.27.6" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version = "6.0.2" }
+assertj = { group = "org.assertj", name = "assertj-core", version = "3.27.7" }
 streamsBootstrap-test = { group = "com.bakdata.kafka", name = "streams-bootstrap-test" }
 
 [plugins]
