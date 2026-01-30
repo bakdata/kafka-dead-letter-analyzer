@@ -19,9 +19,9 @@ assertj = { group = "org.assertj", name = "assertj-core", version = "3.27.7" }
 streamsBootstrap-test = { group = "com.bakdata.kafka", name = "streams-bootstrap-test" }
 
 [plugins]
-release = { id = "com.bakdata.release", version = "1.11.1" }
-sonar = { id = "com.bakdata.sonar", version = "1.11.1" }
-sonatype = { id = "com.bakdata.sonatype", version = "1.11.1" }
+release = { id = "com.bakdata.release", version = "2.1.0" }
+sonar = { id = "com.bakdata.sonar", version = "2.1.0" }
+sonatype = { id = "com.bakdata.sonatype", version = "2.1.0" }
 lombok = { id = "io.freefair.lombok", version = "9.2.0" }
-jib = { id = "com.bakdata.jib", version = "1.11.1" }
+jib = { id = "com.bakdata.jib", version = "2.1.0" }
 avro = { id = "com.bakdata.avro", version = "1.5.0" }
