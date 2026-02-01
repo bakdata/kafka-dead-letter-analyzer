@@ -2,9 +2,9 @@
 kafka-bom = { group = "com.bakdata.kafka", name = "kafka-bom", version = "1.3.1" }
 kafka-streams-avro-serde = { group = "io.confluent", name = "kafka-streams-avro-serde" }
 kafka-connect-runtime = { group = "org.apache.kafka", name = "connect-runtime" }
-largeMessage-bom = { group = "com.bakdata.kafka", name = "large-message-bom", version = "3.1.0" }
+largeMessage-bom = { group = "com.bakdata.kafka", name = "large-message-bom", version = "3.1.1" }
 largeMessage-serde = { group = "com.bakdata.kafka", name = "large-message-serde" }
-errorHandling-bom = { group = "com.bakdata.kafka", name = "error-handling-bom", version = "2.1.0" }
+errorHandling-bom = { group = "com.bakdata.kafka", name = "error-handling-bom", version = "2.1.2" }
 errorHandling-avro = { group = "com.bakdata.kafka", name = "error-handling-avro" }
 streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "6.1.0" }
 streamsBootstrap-largeMessage = { group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages" }
