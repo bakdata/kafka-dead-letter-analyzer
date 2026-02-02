@@ -10,7 +10,7 @@ on:
 jobs:
   build-and-publish:
     name: Java Gradle Docker
-    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@1.72.0
+    uses: bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml@1.72.2
     with:
       java-version: 17
       docker-publisher: "bakdata"
