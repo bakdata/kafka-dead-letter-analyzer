@@ -6,10 +6,10 @@ largeMessage-bom = { group = "com.bakdata.kafka", name = "large-message-bom", ve
 largeMessage-serde = { group = "com.bakdata.kafka", name = "large-message-serde" }
 errorHandling-bom = { group = "com.bakdata.kafka", name = "error-handling-bom", version = "2.1.2" }
 errorHandling-avro = { group = "com.bakdata.kafka", name = "error-handling-avro" }
-streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "6.1.0" }
+streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "6.2.0" }
 streamsBootstrap-largeMessage = { group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages" }
 streamsBootstrap-cli = { group = "com.bakdata.kafka", name = "streams-bootstrap-cli" }
-bruteForce-serde = { group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.4.0" }
+bruteForce-serde = { group = "com.bakdata.kafka", name = "brute-force-serde", version = "1.4.1-SNAPSHOT" }
 jool = { group = "org.jooq", name = "jool", version = "0.9.15" }
 log4j-slf4j2 = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = "2.25.3" }
 
