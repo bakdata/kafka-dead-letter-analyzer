@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.1.0) - 2026-02-04
+### What's changed
+
+* Migrate to version catalog by @philipp94831 in [#27](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/27)
+
+* Bump org.junit.jupiter:junit-jupiter from 5.13.4 to 6.0.0 in the test-dependencies group by @dependabot[bot] in [#30](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/30)
+
+* Bump org.apache.logging.log4j:log4j-slf4j2-impl from 2.25.1 to 2.25.2 in the log-dependencies group by @dependabot[bot] in [#29](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/29)
+
+* Bump bakdata/ci-templates/.github/workflows/java-gradle-release.yaml from 1.70.0 to 1.70.2 by @dependabot[bot] in [#35](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/35)
+
+* Bump the kafka-dependencies group across 1 directory with 3 updates by @dependabot[bot] in [#36](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/36)
+
+* Bump bakdata/ci-templates/.github/workflows/java-gradle-docker.yaml from 1.70.0 to 1.70.2 by @dependabot[bot] in [#34](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/34)
+
+* Bump io.freefair.lombok from 8.14.2 to 9.0.0 in the freefair-plugins group by @dependabot[bot] in [#31](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/31)
+
+* Update Dependabot config by @philipp94831 in [#37](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/37)
+
+* Bump the ci-templates group with 2 updates by @dependabot[bot] in [#38](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/38)
+
+* Bump the test-dependencies group with 2 updates by @dependabot[bot] in [#39](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/39)
+
+* Bump the plugins group with 4 updates by @dependabot[bot] in [#40](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/40)
+
+* Bump gradle-wrapper from 8.14.3 to 9.3.1 by @dependabot[bot] in [#41](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/41)
+
+* Bump the kafka-dependencies group with 2 updates by @dependabot[bot] in [#43](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/43)
+
+* Bump the ci-templates group with 2 updates by @dependabot[bot] in [#42](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/42)
+
+* Upgrade brute force serde by @philipp94831 in [#44](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/44)
+
+
+### New Contributors
+* @dependabot[bot] made their first contribution in [#42](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/42)
+
+**Full Changelog**: https://github.com/bakdata/kafka-dead-letter-analyzer/compare/3.0.1...3.1.0
+
 ## [3.0.1](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.0.1) - 2025-10-15
 ### What's changed
 
