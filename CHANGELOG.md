@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.2.0) - 2026-04-07
+### What's changed
+
+* Bump org.junit.jupiter:junit-jupiter from 6.0.2 to 6.0.3 in the test-dependencies group by @dependabot[bot] in [#46](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/46)
+
+* Bump the ci-templates group with 2 updates by @dependabot[bot] in [#45](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/45)
+
+* Setup multi-ecosystem Dependabot group by @philipp94831 in [#53](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/53)
+
+* Bump org.apache.logging.log4j:log4j-slf4j2-impl from 2.25.3 to 2.25.4 in the log-dependencies group across 1 directory by @dependabot[bot] in [#49](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/49)
+
+* Bump the kafka-dependencies group across 1 directory with 2 updates by @dependabot[bot] in [#48](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/48)
+
+* Bump the "build" group with 1 update across multiple ecosystems by @dependabot[bot] in [#54](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/54)
+
+
+**Full Changelog**: https://github.com/bakdata/kafka-dead-letter-analyzer/compare/3.1.0...3.2.0
+
 ## [3.1.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.1.0) - 2026-02-04
 ### What's changed
 
