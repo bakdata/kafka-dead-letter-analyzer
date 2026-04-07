@@ -1,4 +1,4 @@
-[![Build Status](https://dev.azure.com/bakdata/public/_apis/build/status/bakdata.kafka-dead-letter-analyzer?repoName=bakdata%2Fkafka-dead-letter-analyzer&branchName=main)](https://dev.azure.com/bakdata/public/_build/latest?definitionId=31&repoName=bakdata%2Fkafka-dead-letter-analyzer&branchName=main)
+[![Build and Publish](https://github.com/bakdata/kafka-dead-letter-analyzer/actions/workflows/build-and-publish.yaml/badge.svg)](https://github.com/bakdata/kafka-dead-letter-analyzer/actions/workflows/build-and-publish.yaml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.bakdata.kafka%3Adead-letter-analyzer&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=com.bakdata.kafka%3Adead-letter-analyzer)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.bakdata.kafka%3Adead-letter-analyzer&metric=coverage)](https://sonarcloud.io/summary/new_code?id=com.bakdata.kafka%3Adead-letter-analyzer)
 [![Maven](https://img.shields.io/maven-central/v/com.bakdata.kafka/dead-letter-analyzer.svg)](https://search.maven.org/search?q=g:com.bakdata.kafka%20AND%20a:dead-letter-analyzer&core=gav)
