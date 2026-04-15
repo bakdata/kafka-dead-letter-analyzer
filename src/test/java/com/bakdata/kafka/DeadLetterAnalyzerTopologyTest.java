@@ -587,9 +587,9 @@ class DeadLetterAnalyzerTopologyTest {
 
         this.softly.assertThat(processedDeadLetters.toList())
                 .hasSize(1)
-                .anySatisfy(record -> {
-                    this.softly.assertThat(record.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
-                    final FullDeadLetterWithContext value = record.value();
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).isEqualTo("my-stream-dead-letter-topic+0+0");
+                    final FullDeadLetterWithContext value = producerRecord.value();
                     this.softly.assertThat(value.getKey()).isEqualTo("key");
                     this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
                     this.softly.assertThat(value.getType()).isEqualTo("org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
@@ -601,10 +601,10 @@ class DeadLetterAnalyzerTopologyTest {
                 });
         this.softly.assertThat(statistics.toList())
                 .hasSize(1)
-                .anySatisfy(record -> {
-                    this.softly.assertThat(record.key())
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key())
                             .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final FullErrorStatistics value = record.value();
+                    final FullErrorStatistics value = producerRecord.value();
                     this.softly.assertThat(value.getCount()).isEqualTo(1);
                     this.softly.assertThat(parseDateTime(value.getCreated()))
                             .isEqualToIgnoringNanos(toDateTime(Instant.ofEpochMilli(firstTimestamp)));
@@ -615,10 +615,10 @@ class DeadLetterAnalyzerTopologyTest {
                 });
         this.softly.assertThat(examples.toList())
                 .hasSize(1)
-                .anySatisfy(record -> {
-                    this.softly.assertThat(record.key())
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key())
                             .isEqualTo("my-stream-dead-letter-topic:org.jdbi.v3.core.Jdbi.open(Jdbi.java:319)");
-                    final ErrorExample value = record.value();
+                    final ErrorExample value = producerRecord.value();
                     final ExampleDeadLetterWithContext example = value.getExample();
                     this.softly.assertThat(example.getDeadLetter()).isEqualTo(expectedDeadLetter);
                     this.softly.assertThat(example.getKey()).isEqualTo("key");

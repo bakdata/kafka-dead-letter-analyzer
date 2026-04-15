@@ -162,17 +162,11 @@ class NativeStreamsDeadLetterParserTest {
     }
 
     @ParameterizedTest
-    @MethodSource("generateMissingRequiredHeaders")
-    void shouldThrowWithMissingRequiredHeaders(final Headers headers, final String message) {
-        final DeadLetterParser parser = new NativeStreamsDeadLetterParser();
-        this.softly.assertThatThrownBy(() -> parser.convert("foo", headers, 0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage(message);
-    }
-
-    @ParameterizedTest
-    @MethodSource("generateNonNullableHeaders")
-    void shouldThrowWithNonNullableHeaders(final Headers headers, final String message) {
+    @MethodSource({
+            "generateMissingRequiredHeaders",
+            "generateNonNullableHeaders",
+    })
+    void shouldThrowForInvalidHeaders(final Headers headers, final String message) {
         final DeadLetterParser parser = new NativeStreamsDeadLetterParser();
         this.softly.assertThatThrownBy(() -> parser.convert("foo", headers, 0))
                 .isInstanceOf(IllegalArgumentException.class)
