@@ -17,12 +17,6 @@ allprojects {
         maxParallelForks = 4
         useJUnitPlatform()
     }
-
-    repositories {
-        mavenCentral()
-        maven(url = "https://packages.confluent.io/maven/")
-        maven(url = "https://central.sonatype.com/repository/maven-snapshots")
-    }
 }
 
 java {
