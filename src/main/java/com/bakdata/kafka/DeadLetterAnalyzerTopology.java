@@ -192,31 +192,29 @@ class DeadLetterAnalyzerTopology {
     }
 
     private static <K> KStreamX<K, KeyedDeadLetterWithContext> enrichWithContext(
-            final KStreamX<K, ? extends DeadLetter> allDeadLetters) {
-        final KStreamX<K, ProcessedValue<DeadLetter, KeyedDeadLetterWithContext>> processedDeadLetters =
-                allDeadLetters.processValues(
-                        ErrorCapturingValueProcessor.captureErrors(ContextEnricher::new));
+            final KStreamX<K, DeadLetter> allDeadLetters) {
+        final KErrorStreamX<K, DeadLetter, K, KeyedDeadLetterWithContext> processedDeadLetters =
+                allDeadLetters.processValuesCapturingErrors(ContextEnricher::new);
 
         final KStreamX<K, DeadLetter> analysisDeadLetters =
-                processedDeadLetters.flatMapValues(ProcessedValue::getErrors)
+                processedDeadLetters.errors()
                         .processValues(AvroDeadLetterConverter.asProcessor("Error analyzing dead letter"));
         toDeadLetterTopic(analysisDeadLetters);
 
-        return processedDeadLetters.flatMapValues(ProcessedValue::getValues);
+        return processedDeadLetters.values();
     }
 
     private static <K> KStreamX<K, DeadLetter> streamHeaderDeadLetters(final KStreamX<K, Object> input,
             final DeadLetterParser converterFactory) {
-        final KStreamX<K, ProcessedValue<Object, DeadLetter>> processedInput = input.processValues(
-                ErrorCapturingValueProcessor.captureErrors(
-                        () -> new DeadLetterParserTransformer<>(converterFactory)));
+        final KErrorStreamX<K, Object, K, DeadLetter> processedInput = input.processValuesCapturingErrors(
+                () -> new DeadLetterParserTransformer<>(converterFactory));
         final KStreamX<K, DeadLetter> deadLetters =
-                processedInput.flatMapValues(ProcessedValue::getErrors)
+                processedInput.errors()
                         .processValues(
                                 AvroDeadLetterConverter.asProcessor("Error converting errors to dead letters"));
         toDeadLetterTopic(deadLetters);
 
-        return processedInput.flatMapValues(ProcessedValue::getValues);
+        return processedInput.values();
     }
 
 }

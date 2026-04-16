@@ -32,8 +32,8 @@ import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 import org.apache.kafka.streams.processor.api.RecordMetadata;
 
 @RequiredArgsConstructor
-class ContextEnricher implements FixedKeyProcessor<Object, DeadLetter, KeyedDeadLetterWithContext> {
-    private FixedKeyProcessorContext<Object, KeyedDeadLetterWithContext> context;
+class ContextEnricher<K> implements FixedKeyProcessor<K, DeadLetter, KeyedDeadLetterWithContext> {
+    private FixedKeyProcessorContext<K, KeyedDeadLetterWithContext> context;
 
     private static String extractType(final DeadLetter value) {
         final String stackTrace = value.getCause().getStackTrace().orElseThrow();
@@ -41,13 +41,13 @@ class ContextEnricher implements FixedKeyProcessor<Object, DeadLetter, KeyedDead
     }
 
     @Override
-    public void init(final FixedKeyProcessorContext<Object, KeyedDeadLetterWithContext> context) {
+    public void init(final FixedKeyProcessorContext<K, KeyedDeadLetterWithContext> context) {
         this.context = context;
     }
 
     @Override
-    public void process(final FixedKeyRecord<Object, DeadLetter> inputRecord) {
-        final Object key = inputRecord.key();
+    public void process(final FixedKeyRecord<K, DeadLetter> inputRecord) {
+        final K key = inputRecord.key();
         final DeadLetter deadLetter = inputRecord.value();
         final RecordMetadata recordMetadata =
                 this.context.recordMetadata().orElseThrow(() -> new IllegalArgumentException("No metadata available"));
