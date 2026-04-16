@@ -10,10 +10,10 @@ import org.apache.kafka.streams.processor.api.FixedKeyProcessorContext;
 import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 
 @NoArgsConstructor
-class DeadLetterFilter implements FixedKeyProcessor<Object, Object, DeadLetter> {
-    private FixedKeyProcessorContext<Object, DeadLetter> context;
+class NativeDeadLetterFilter<K, V> implements FixedKeyProcessor<K, V, V> {
+    private FixedKeyProcessorContext<K, V> context;
 
-    private static boolean isNativeDeadLetter(final FixedKeyRecord<Object, Object> inputRecord) {
+    private static <K, V> boolean isNativeDeadLetter(final FixedKeyRecord<K, V> inputRecord) {
         final Headers headers = inputRecord.headers();
         // if we failed to analyze a DeadLetter in this app, a new dead letter is created with the native dlq headers
         // these dead letters need to be routed to NativeStreamsDeadLetterParser
@@ -22,15 +22,14 @@ class DeadLetterFilter implements FixedKeyProcessor<Object, Object, DeadLetter> 
     }
 
     @Override
-    public void init(final FixedKeyProcessorContext<Object, DeadLetter> context) {
+    public void init(final FixedKeyProcessorContext<K, V> context) {
         this.context = context;
     }
 
     @Override
-    public void process(final FixedKeyRecord<Object, Object> inputRecord) {
-        final Object object = inputRecord.value();
-        if (object instanceof final DeadLetter deadLetter && !isNativeDeadLetter(inputRecord)) {
-            this.context.forward(inputRecord.withValue(deadLetter));
+    public void process(final FixedKeyRecord<K, V> inputRecord) {
+        if (!isNativeDeadLetter(inputRecord)) {
+            this.context.forward(inputRecord);
         }
     }
 

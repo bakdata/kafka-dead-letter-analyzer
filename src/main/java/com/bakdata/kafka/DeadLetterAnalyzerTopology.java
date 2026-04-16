@@ -35,6 +35,7 @@ import com.bakdata.kafka.streams.kstream.ProducedX;
 import com.bakdata.kafka.streams.kstream.RepartitionedX;
 import com.bakdata.kafka.streams.kstream.StreamsBuilderX;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import java.util.List;
 import java.util.Set;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -93,6 +94,10 @@ class DeadLetterAnalyzerTopology {
                 .build();
     }
 
+    private static List<DeadLetter> getDeadLetters(final Object object) {
+        return object instanceof DeadLetter ? List.of((DeadLetter) object) : List.of();
+    }
+
     private static Preconfigured<Serde<Object>> getInputSerde() {
         final Serde<Object> serde = new BruteForceSerde();
         return Preconfigured.create(serde);
@@ -141,10 +146,12 @@ class DeadLetterAnalyzerTopology {
                 ConsumedX.with(getInputSerde(), getInputSerde()));
 
         final KStreamX<Object, DeadLetter> streamDeadLetters = rawDeadLetters
-                .processValues(DeadLetterFilter::new);
+                .flatMapValues(DeadLetterAnalyzerTopology::getDeadLetters)
+                .processValues(NativeDeadLetterFilter::new);
 
         final KStreamX<Object, Object> rawStreamHeaderDeadLetters = rawDeadLetters
-                .processValues(() -> new HeaderFilter<>(EXCEPTION_CLASS_NAME));
+                .processValues(() -> new HeaderFilter<>(EXCEPTION_CLASS_NAME))
+                .processValues(NativeDeadLetterFilter::new);
         final KStreamX<Object, DeadLetter> streamHeaderDeadLetters =
                 streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser());
 
@@ -154,7 +161,8 @@ class DeadLetterAnalyzerTopology {
                 streamHeaderDeadLetters(rawNativeStreamDeadLetters, new NativeStreamsDeadLetterParser());
 
         final KStreamX<Object, Object> rawConnectDeadLetters = rawDeadLetters
-                .processValues(() -> new HeaderFilter<>(ERROR_HEADER_CONNECTOR_NAME));
+                .processValues(() -> new HeaderFilter<>(ERROR_HEADER_CONNECTOR_NAME))
+                .processValues(NativeDeadLetterFilter::new);
         final KStreamX<Object, DeadLetter> connectDeadLetters =
                 streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser());
 
