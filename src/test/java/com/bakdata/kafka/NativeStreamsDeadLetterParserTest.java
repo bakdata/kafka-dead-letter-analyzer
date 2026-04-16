@@ -25,8 +25,6 @@
 package com.bakdata.kafka;
 
 import static com.bakdata.kafka.ConnectDeadLetterParserTest.toBytes;
-import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
-import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_EXCEPTION_MESSAGE_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_EXCEPTION_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_OFFSET_NAME;
@@ -112,8 +110,6 @@ class NativeStreamsDeadLetterParserTest {
                 .add(HEADER_ERRORS_PARTITION_NAME, toBytes(1))
                 .add(HEADER_ERRORS_TOPIC_NAME, toBytes("my-topic"))
                 .add(HEADER_ERRORS_OFFSET_NAME, toBytes(10L))
-                .add(HEADER_ERRORS_PROCESSOR_NODE_ID_NAME, toBytes("processor"))
-                .add(HEADER_ERRORS_TASK_ID_NAME, toBytes("task"))
                 .add(HEADER_ERRORS_EXCEPTION_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(HEADER_ERRORS_EXCEPTION_MESSAGE_NAME, toBytes("my message"))
                 .add(HEADER_ERRORS_STACKTRACE_NAME, toBytes(StackTraceClassifierTest.STACK_TRACE));
@@ -130,7 +126,7 @@ class NativeStreamsDeadLetterParserTest {
                     this.softly.assertThat(cause.getMessage()).hasValue("my message");
                     this.softly.assertThat(cause.getStackTrace()).hasValue(StackTraceClassifierTest.STACK_TRACE);
                     this.softly.assertThat(deadLetter.getDescription())
-                            .isEqualTo("Error in processor node processor in task task");
+                            .isEqualTo("Error processing record");
                     this.softly.assertThat(deadLetter.getInputTimestamp()).hasValue(Instant.ofEpochMilli(200L));
                 });
     }
@@ -149,16 +145,6 @@ class NativeStreamsDeadLetterParserTest {
                 .add(HEADER_ERRORS_EXCEPTION_MESSAGE_NAME, null);
         this.softly.assertThat(new NativeStreamsDeadLetterParser().convert("foo", headers, 0))
                 .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getCause().getMessage()).isNotPresent());
-    }
-
-    @Test
-    void shouldConvertNullProcessorNodeIdAndTaskIdHeader() {
-        final Headers headers = generateDefaultHeaders()
-                .add(HEADER_ERRORS_PROCESSOR_NODE_ID_NAME, null)
-                .add(HEADER_ERRORS_TASK_ID_NAME, null);
-        this.softly.assertThat(new NativeStreamsDeadLetterParser().convert("foo", headers, 0))
-                .satisfies(deadLetter -> this.softly.assertThat(deadLetter.getDescription())
-                        .isEqualTo("Error in processor node [unknown] in task [unknown]"));
     }
 
     @ParameterizedTest
