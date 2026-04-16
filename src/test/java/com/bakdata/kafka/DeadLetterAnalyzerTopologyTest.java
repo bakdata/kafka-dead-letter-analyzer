@@ -27,6 +27,8 @@ package com.bakdata.kafka;
 import static com.bakdata.kafka.ConnectDeadLetterParserTest.toBytes;
 import static com.bakdata.kafka.DeadLetterAnalyzerTopology.EXAMPLES_TOPIC_LABEL;
 import static com.bakdata.kafka.DeadLetterAnalyzerTopology.STATS_TOPIC_LABEL;
+import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
+import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
 import static com.bakdata.kafka.ErrorHeaderProcessor.DESCRIPTION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_MESSAGE;
@@ -52,7 +54,6 @@ import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HE
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_PARTITION_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_STACKTRACE_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_TOPIC_NAME;
-import static org.jooq.lambda.Seq.seq;
 
 import com.bakdata.fluent_kafka_streams_tests.TestInput;
 import com.bakdata.fluent_kafka_streams_tests.TestOutput;
@@ -76,7 +77,6 @@ import org.apache.kafka.common.serialization.Serdes;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -335,16 +335,12 @@ class DeadLetterAnalyzerTopologyTest {
         final TestOutput<String, ErrorExample> examples = this.getExamples();
 
         input.add("key", deadLetter);
-        final Seq<ProducerRecord<String, DeadLetter>> deadLetters = this.getDeadLetters();
+        final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
         this.softly.assertThat(deadLetters.toList())
                 .hasSize(1)
                 .anySatisfy(record -> {
                     this.softly.assertThat(record.key()).isEqualTo("key");
-                    final DeadLetter value = record.value();
-                    this.softly.assertThat(value.getDescription()).isEqualTo("Error analyzing dead letter");
-                    this.softly.assertThat(value.getTopic()).hasValue("my-stream-dead-letter-topic");
-                    this.softly.assertThat(value.getPartition()).hasValue(0);
-                    this.softly.assertThat(value.getOffset()).hasValue(0L);
+                    this.softly.assertThat(record.value()).isEqualTo(deadLetter);
                 });
         this.softly.assertThat(processedDeadLetters.toList())
                 .hasSize(1)
@@ -561,6 +557,8 @@ class DeadLetterAnalyzerTopologyTest {
                 .add(HEADER_ERRORS_PARTITION_NAME, toBytes(1))
                 .add(HEADER_ERRORS_TOPIC_NAME, toBytes("my-topic"))
                 .add(HEADER_ERRORS_OFFSET_NAME, toBytes(10L))
+                .add(HEADER_ERRORS_PROCESSOR_NODE_ID_NAME, toBytes("processor"))
+                .add(HEADER_ERRORS_TASK_ID_NAME, toBytes("task"))
                 .add(HEADER_ERRORS_EXCEPTION_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(HEADER_ERRORS_EXCEPTION_MESSAGE_NAME, toBytes("my message"))
                 .add(HEADER_ERRORS_STACKTRACE_NAME, toBytes(StackTraceClassifierTest.STACK_TRACE));
@@ -574,7 +572,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setMessage("my message")
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
-                .setDescription("Error processing record")
+                .setDescription("Error in processor node processor in task task")
                 .setPartition(1)
                 .setTopic("my-topic")
                 .setOffset(10L)
@@ -671,7 +669,7 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     private void assertNoDeadLetters() {
-        final Seq<ProducerRecord<String, DeadLetter>> deadLetters = this.getDeadLetters();
+        final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
         this.softly.assertThat(deadLetters.toList()).isEmpty();
     }
 
@@ -686,10 +684,6 @@ class DeadLetterAnalyzerTopologyTest {
         return Preconfigured.create(valueSerde);
     }
 
-    private <T> T configureForValues(final Preconfigured<T> preconfigured) {
-        return this.topology.createConfigurator().configureForValues(preconfigured);
-    }
-
     private TestOutput<String, FullErrorStatistics> getStatistics() {
         return this.topology.streamOutput(DeadLetterAnalyzerTopology.getStatsTopic(TOPIC_CONFIG))
                 .configureWithValueSerde(DeadLetterAnalyzerTopology.getSpecificAvroSerde());
@@ -701,15 +695,9 @@ class DeadLetterAnalyzerTopologyTest {
                 .configureWithValueSerde(valueSerde);
     }
 
-    private Seq<ProducerRecord<String, DeadLetter>> getDeadLetters() {
-        final Preconfigured<Serde<DeadLetter>> valueSerde = getLargeMessageSerde();
-        final TestOutput<String, byte[]> output = this.topology.streamOutput(TOPIC_CONFIG.getErrorTopic())
-                .withValueSerde(Serdes.ByteArray());
-        return seq(output)
-                // Record has already been consumed by the analyzer and headers are modified.
-                // This only happens in the TestDriver because record headers are reused.
-                // In Kafka this does not happen because the headers are stored server-side.
-                .map(rekord -> deserializeNonBacked(this.configureForValues(valueSerde), rekord));
+    private TestOutput<String, SpecificRecord> getDeadLetters() {
+        return this.topology.streamOutput(TOPIC_CONFIG.getErrorTopic())
+                .configureWithValueSerde(DeadLetterAnalyzerTopology.getSpecificAvroSerde());
     }
 
     private <K> TestInput<K, SpecificRecord> getStreamsInput(final Serde<K> keySerde) {
