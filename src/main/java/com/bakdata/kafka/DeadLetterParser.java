@@ -25,7 +25,6 @@
 package com.bakdata.kafka;
 
 import org.apache.kafka.common.header.Headers;
-import org.apache.kafka.streams.processor.api.FixedKeyRecord;
 
 @FunctionalInterface
 interface DeadLetterParser {

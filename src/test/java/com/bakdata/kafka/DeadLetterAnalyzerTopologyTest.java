@@ -37,7 +37,6 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
 import static com.bakdata.kafka.Formatter.DATE_TIME_FORMATTER;
-import static com.bakdata.kafka.HeaderLargeMessagePayloadProtocol.getHeaderName;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION_MESSAGE;
@@ -54,7 +53,6 @@ import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HE
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_PARTITION_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_STACKTRACE_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_TOPIC_NAME;
-import static org.jooq.lambda.Seq.seq;
 
 import com.bakdata.fluent_kafka_streams_tests.TestInput;
 import com.bakdata.fluent_kafka_streams_tests.TestOutput;
@@ -70,15 +68,15 @@ import java.time.ZoneId;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.apache.avro.specific.SpecificRecord;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
-import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -113,19 +111,6 @@ class DeadLetterAnalyzerTopologyTest {
 
     private static LocalDateTime toDateTime(final Instant instant) {
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-    }
-
-    private static <T> ProducerRecord<String, T> deserializeNonBacked(final Serde<? extends T> valueSerde,
-            final ProducerRecord<String, byte[]> record) {
-        final Headers headers = new RecordHeaders(record.headers())
-                .add(getHeaderName(false), new byte[]{FlagHelper.IS_NOT_BACKED});
-        final String topic = record.topic();
-        final byte[] value = record.value();
-        final T deserializedValue = valueSerde.deserializer().deserialize(topic, headers, value);
-        final Integer partition = record.partition();
-        final Long timestamp = record.timestamp();
-        final String key = record.key();
-        return new ProducerRecord<>(topic, partition, timestamp, key, deserializedValue, headers);
     }
 
     @Test
@@ -317,8 +302,14 @@ class DeadLetterAnalyzerTopologyTest {
         this.assertNoDeadLetters();
     }
 
+    private static String getDeserialized(final Headers headers, final String name) {
+        try (final Deserializer<String> deserializer = new StringDeserializer()) {
+            return deserializer.deserialize(null, headers.lastHeader(name).value());
+        }
+    }
+
     @Test
-    void shouldProduceDeadLetterAndAnalyze() {
+    void shouldProduceDeadLetterFromAvroDeadLetterAndAnalyze() {
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
         final DeadLetter deadLetter = DeadLetter.newBuilder()
                 .setInputValue("foo")
@@ -337,16 +328,15 @@ class DeadLetterAnalyzerTopologyTest {
         final TestOutput<String, ErrorExample> examples = this.getExamples();
 
         input.add("key", deadLetter);
-        final Seq<ProducerRecord<String, DeadLetter>> deadLetters = this.getDeadLetters();
+        final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
         this.softly.assertThat(deadLetters.toList())
                 .hasSize(1)
                 .anySatisfy(producerRecord -> {
                     this.softly.assertThat(producerRecord.key()).isEqualTo("key");
-                    final DeadLetter value = producerRecord.value();
-                    this.softly.assertThat(value.getDescription()).isEqualTo("Error analyzing dead letter");
-                    this.softly.assertThat(value.getTopic()).hasValue("my-stream-dead-letter-topic");
-                    this.softly.assertThat(value.getPartition()).hasValue(0);
-                    this.softly.assertThat(value.getOffset()).hasValue(0L);
+                    this.softly.assertThat(producerRecord.value()).isEqualTo(deadLetter);
+                    this.softly.assertThat(
+                                    getDeserialized(producerRecord.headers(), HEADER_ERRORS_PROCESSOR_NODE_ID_NAME))
+                            .isEqualTo("analysis");
                 });
         this.softly.assertThat(processedDeadLetters.toList())
                 .hasSize(1)
@@ -468,6 +458,69 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     @Test
+    void shouldProduceDeadLetterFromConnectDeadLetterAndAnalyze() {
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
+        // ERROR_HEADER_STAGE is missing and crashes the app
+        final Headers headers = new RecordHeaders()
+                .add(ERROR_HEADER_ORIG_PARTITION, toBytes(1))
+                .add(ERROR_HEADER_ORIG_TOPIC, toBytes("my-topic"))
+                .add(ERROR_HEADER_ORIG_OFFSET, toBytes(10L))
+                .add(ERROR_HEADER_EXECUTING_CLASS, toBytes("org.apache.kafka.connect.json.JsonConverter"))
+                .add(ERROR_HEADER_EXCEPTION, toBytes("org.apache.kafka.connect.errors.DataException"))
+                .add(ERROR_HEADER_TASK_ID, toBytes(2))
+                .add(ERROR_HEADER_CONNECTOR_NAME, toBytes("my-connector"))
+                .add(ERROR_HEADER_EXCEPTION_MESSAGE, toBytes("my message"))
+                .add(ERROR_HEADER_EXCEPTION_STACK_TRACE, toBytes(StackTraceClassifierTest.STACK_TRACE));
+        final TestRecord testRecord = TestRecord.newBuilder().setId(0).build();
+
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
+                this.getProcessedDeadLetters();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
+        final TestOutput<String, ErrorExample> examples = this.getExamples();
+
+        input.add("key", testRecord, headers);
+        final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
+        this.softly.assertThat(deadLetters.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).isEqualTo("key");
+                    this.softly.assertThat(producerRecord.value()).isEqualTo(testRecord);
+                });
+        this.softly.assertThat(processedDeadLetters.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    //offset used by internal dead letter is 1. Maybe it has to do with exactly once guarantees
+                    this.softly.assertThat(producerRecord.key()).isEqualTo("analyzer-stream-dead-letter-topic+0+1");
+                    final FullDeadLetterWithContext value = producerRecord.value();
+                    this.softly.assertThat(value.getKey()).isEqualTo("key");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                    this.softly.assertThat(value.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getOffset()).isEqualTo(1L);
+                });
+        this.softly.assertThat(statistics.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final FullErrorStatistics value = producerRecord.value();
+                    this.softly.assertThat(value.getCount()).isEqualTo(1);
+                    this.softly.assertThat(value.getType()).isNotEmpty();
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                });
+        this.softly.assertThat(examples.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final ErrorExample value = producerRecord.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
+                    this.softly.assertThat(example.getKey()).isEqualTo("key");
+                    this.softly.assertThat(example.getOffset()).isEqualTo(1L);
+                    this.softly.assertThat(example.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getType()).isNotEmpty();
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                });
+    }
+
+    @Test
     void shouldProcessStreamsHeaderErrors() {
         final TestInput<String, String> input = this.getStreamsInput(Serdes.String())
                 .withValueSerde(Serdes.String());
@@ -547,6 +600,66 @@ class DeadLetterAnalyzerTopologyTest {
                     this.softly.assertThat(value.getTopic()).isEqualTo("my-stream-dead-letter-topic");
                 });
         this.assertNoDeadLetters();
+    }
+
+    @Test
+    void shouldProduceDeadLetterFromStreamsHeaderErrorAndAnalyze() {
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
+        // EXCEPTION_STACK_TRACE is missing and crashes the app
+        final Headers headers = new RecordHeaders()
+                .add(PARTITION, toBytes(1))
+                .add(TOPIC, toBytes("my-topic"))
+                .add(OFFSET, toBytes(10L))
+                .add(DESCRIPTION, toBytes("description"))
+                .add(EXCEPTION_CLASS_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
+                .add(EXCEPTION_MESSAGE, toBytes("my message"));
+        final TestRecord testRecord = TestRecord.newBuilder().setId(0).build();
+
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
+                this.getProcessedDeadLetters();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
+        final TestOutput<String, ErrorExample> examples = this.getExamples();
+
+        input.add("key", testRecord, headers);
+        final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
+        this.softly.assertThat(deadLetters.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).isEqualTo("key");
+                    this.softly.assertThat(producerRecord.value()).isEqualTo(testRecord);
+                });
+        this.softly.assertThat(processedDeadLetters.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    //offset used by internal dead letter is 1. Maybe it has to do with exactly once guarantees
+                    this.softly.assertThat(producerRecord.key()).isEqualTo("analyzer-stream-dead-letter-topic+0+1");
+                    final FullDeadLetterWithContext value = producerRecord.value();
+                    this.softly.assertThat(value.getKey()).isEqualTo("key");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                    this.softly.assertThat(value.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getOffset()).isEqualTo(1L);
+                });
+        this.softly.assertThat(statistics.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final FullErrorStatistics value = producerRecord.value();
+                    this.softly.assertThat(value.getCount()).isEqualTo(1);
+                    this.softly.assertThat(value.getType()).isNotEmpty();
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                });
+        this.softly.assertThat(examples.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final ErrorExample value = producerRecord.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
+                    this.softly.assertThat(example.getKey()).isEqualTo("key");
+                    this.softly.assertThat(example.getOffset()).isEqualTo(1L);
+                    this.softly.assertThat(example.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getType()).isNotEmpty();
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                });
     }
 
     @Test
@@ -633,6 +746,67 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     @Test
+    void shouldProduceDeadLetterFromNativeStreamsErrorAndAnalyze() {
+        final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
+        // HEADER_ERRORS_STACKTRACE_NAME is missing and crashes the app
+        final Headers headers = new RecordHeaders()
+                .add(HEADER_ERRORS_PARTITION_NAME, toBytes(1))
+                .add(HEADER_ERRORS_TOPIC_NAME, toBytes("my-topic"))
+                .add(HEADER_ERRORS_OFFSET_NAME, toBytes(10L))
+                .add(HEADER_ERRORS_PROCESSOR_NODE_ID_NAME, toBytes("processor"))
+                .add(HEADER_ERRORS_TASK_ID_NAME, toBytes("task"))
+                .add(HEADER_ERRORS_EXCEPTION_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
+                .add(HEADER_ERRORS_EXCEPTION_MESSAGE_NAME, toBytes("my message"));
+        final TestRecord testRecord = TestRecord.newBuilder().setId(0).build();
+
+        final TestOutput<String, FullDeadLetterWithContext> processedDeadLetters =
+                this.getProcessedDeadLetters();
+        final TestOutput<String, FullErrorStatistics> statistics = this.getStatistics();
+        final TestOutput<String, ErrorExample> examples = this.getExamples();
+
+        input.add("key", testRecord, headers);
+        final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
+        this.softly.assertThat(deadLetters.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).isEqualTo("key");
+                    this.softly.assertThat(producerRecord.value()).isEqualTo(testRecord);
+                });
+        this.softly.assertThat(processedDeadLetters.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    //offset used by internal dead letter is 1. Maybe it has to do with exactly once guarantees
+                    this.softly.assertThat(producerRecord.key()).isEqualTo("analyzer-stream-dead-letter-topic+0+1");
+                    final FullDeadLetterWithContext value = producerRecord.value();
+                    this.softly.assertThat(value.getKey()).isEqualTo("key");
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                    this.softly.assertThat(value.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getOffset()).isEqualTo(1L);
+                });
+        this.softly.assertThat(statistics.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final FullErrorStatistics value = producerRecord.value();
+                    this.softly.assertThat(value.getCount()).isEqualTo(1);
+                    this.softly.assertThat(value.getType()).isNotEmpty();
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                });
+        this.softly.assertThat(examples.toList())
+                .hasSize(1)
+                .anySatisfy(producerRecord -> {
+                    this.softly.assertThat(producerRecord.key()).startsWith("analyzer-stream-dead-letter-topic:");
+                    final ErrorExample value = producerRecord.value();
+                    final ExampleDeadLetterWithContext example = value.getExample();
+                    this.softly.assertThat(example.getKey()).isEqualTo("key");
+                    this.softly.assertThat(example.getOffset()).isEqualTo(1L);
+                    this.softly.assertThat(example.getPartition()).isEqualTo(0);
+                    this.softly.assertThat(value.getType()).isNotEmpty();
+                    this.softly.assertThat(value.getTopic()).isEqualTo("analyzer-stream-dead-letter-topic");
+                });
+    }
+
+    @Test
     void shouldReadAvroKey() {
         final TestInput<SpecificRecord, SpecificRecord> input =
                 this.getStreamsInput(DeadLetterAnalyzerTopology.getSpecificAvroSerde());
@@ -675,7 +849,7 @@ class DeadLetterAnalyzerTopologyTest {
     }
 
     private void assertNoDeadLetters() {
-        final Seq<ProducerRecord<String, DeadLetter>> deadLetters = this.getDeadLetters();
+        final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
         this.softly.assertThat(deadLetters.toList()).isEmpty();
     }
 
@@ -690,10 +864,6 @@ class DeadLetterAnalyzerTopologyTest {
         return Preconfigured.create(valueSerde);
     }
 
-    private <T> T configureForValues(final Preconfigured<T> preconfigured) {
-        return this.topology.createConfigurator().configureForValues(preconfigured);
-    }
-
     private TestOutput<String, FullErrorStatistics> getStatistics() {
         return this.topology.streamOutput(DeadLetterAnalyzerTopology.getStatsTopic(TOPIC_CONFIG))
                 .configureWithValueSerde(DeadLetterAnalyzerTopology.getSpecificAvroSerde());
@@ -705,15 +875,9 @@ class DeadLetterAnalyzerTopologyTest {
                 .configureWithValueSerde(valueSerde);
     }
 
-    private Seq<ProducerRecord<String, DeadLetter>> getDeadLetters() {
-        final Preconfigured<Serde<DeadLetter>> valueSerde = getLargeMessageSerde();
-        final TestOutput<String, byte[]> output = this.topology.streamOutput(TOPIC_CONFIG.getErrorTopic())
-                .withValueSerde(Serdes.ByteArray());
-        return seq(output)
-                // Record has already been consumed by the analyzer and headers are modified.
-                // This only happens in the TestDriver because record headers are reused.
-                // In Kafka this does not happen because the headers are stored server-side.
-                .map(rekord -> deserializeNonBacked(this.configureForValues(valueSerde), rekord));
+    private TestOutput<String, SpecificRecord> getDeadLetters() {
+        return this.topology.streamOutput(TOPIC_CONFIG.getErrorTopic())
+                .configureWithValueSerde(DeadLetterAnalyzerTopology.getSpecificAvroSerde());
     }
 
     private <K> TestInput<K, SpecificRecord> getStreamsInput(final Serde<K> keySerde) {
