@@ -135,13 +135,6 @@ class DeadLetterAnalyzerTopology {
         return input.processValues(() -> new DeadLetterParserTransformer<>(converterFactory), named);
     }
 
-    private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
-            final Preconfigured<? extends Serde<ErrorKey>> errorKeySerde) {
-        final KeyValueBytesStoreSupplier statisticsStoreSupplier =
-                Stores.persistentKeyValueStore(STATISTICS_STORE_NAME);
-        return this.builder.stores().keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde, getSpecificAvroSerde());
-    }
-
     private KStreamX<Object, DeadLetter> streamDeadLetters() {
         final KStreamX<Object, Object> rawDeadLetters = this.builder.streamInputPattern(
                 ConsumedX.with(getInputSerde(), getInputSerde()));
@@ -201,6 +194,14 @@ class DeadLetterAnalyzerTopology {
                         },
                         Named.as("aggregation")
                 );
+    }
+
+    private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
+            final Preconfigured<? extends Serde<ErrorKey>> errorKeySerde) {
+        final KeyValueBytesStoreSupplier statisticsStoreSupplier =
+                Stores.persistentKeyValueStore(STATISTICS_STORE_NAME);
+        return this.builder.stores()
+                .keyValueStoreBuilder(statisticsStoreSupplier, errorKeySerde, getSpecificAvroSerde());
     }
 
 }
