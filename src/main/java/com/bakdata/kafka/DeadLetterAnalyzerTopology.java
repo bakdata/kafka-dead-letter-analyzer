@@ -96,7 +96,7 @@ class DeadLetterAnalyzerTopology {
     }
 
     private static List<DeadLetter> getDeadLetters(final Object object) {
-        return object instanceof DeadLetter ? List.of((DeadLetter) object) : List.of();
+        return object instanceof DeadLetter deadLetter ? List.of(deadLetter) : List.of();
     }
 
     private static Preconfigured<Serde<Object>> getInputSerde() {

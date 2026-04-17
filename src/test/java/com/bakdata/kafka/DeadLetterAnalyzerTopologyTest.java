@@ -37,7 +37,6 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
 import static com.bakdata.kafka.Formatter.DATE_TIME_FORMATTER;
-import static com.bakdata.kafka.HeaderLargeMessagePayloadProtocol.getHeaderName;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_EXCEPTION_MESSAGE;
@@ -69,7 +68,6 @@ import java.time.ZoneId;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.apache.avro.specific.SpecificRecord;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.apache.kafka.common.serialization.Deserializer;
@@ -113,19 +111,6 @@ class DeadLetterAnalyzerTopologyTest {
 
     private static LocalDateTime toDateTime(final Instant instant) {
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-    }
-
-    private static <T> ProducerRecord<String, T> deserializeNonBacked(final Serde<? extends T> valueSerde,
-            final ProducerRecord<String, byte[]> record) {
-        final Headers headers = new RecordHeaders(record.headers())
-                .add(getHeaderName(false), new byte[]{FlagHelper.IS_NOT_BACKED});
-        final String topic = record.topic();
-        final byte[] value = record.value();
-        final T deserializedValue = valueSerde.deserializer().deserialize(topic, headers, value);
-        final Integer partition = record.partition();
-        final Long timestamp = record.timestamp();
-        final String key = record.key();
-        return new ProducerRecord<>(topic, partition, timestamp, key, deserializedValue, headers);
     }
 
     @Test
