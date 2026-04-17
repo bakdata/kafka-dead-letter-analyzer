@@ -41,6 +41,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.common.serialization.Serde;
+import org.apache.kafka.streams.kstream.Named;
 import org.apache.kafka.streams.processor.api.FixedKeyProcessor;
 import org.apache.kafka.streams.processor.api.FixedKeyProcessorSupplier;
 import org.apache.kafka.streams.state.KeyValueBytesStoreSupplier;
@@ -126,12 +127,12 @@ class DeadLetterAnalyzerTopology {
 
     private static <K> KStreamX<K, KeyedDeadLetterWithContext> enrichWithContext(
             final KStreamX<K, DeadLetter> allDeadLetters) {
-        return allDeadLetters.processValues(ContextEnricher::new);
+        return allDeadLetters.processValues(ContextEnricher::new, Named.as("analysis"));
     }
 
     private static <K> KStreamX<K, DeadLetter> streamHeaderDeadLetters(final KStreamX<K, Object> input,
-            final DeadLetterParser converterFactory) {
-        return input.processValues(() -> new DeadLetterParserTransformer<>(converterFactory));
+            final DeadLetterParser converterFactory, final Named named) {
+        return input.processValues(() -> new DeadLetterParserTransformer<>(converterFactory), named);
     }
 
     private StoreBuilder<KeyValueStore<ErrorKey, ErrorStatistics>> createStatisticsStore(
@@ -153,18 +154,21 @@ class DeadLetterAnalyzerTopology {
                 .processValues(() -> new HeaderFilter<>(EXCEPTION_CLASS_NAME))
                 .processValues(NativeDeadLetterFilter::new);
         final KStreamX<Object, DeadLetter> streamHeaderDeadLetters =
-                streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser());
+                streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser(),
+                        Named.as("stream-conversion"));
 
         final KStreamX<Object, Object> rawNativeStreamDeadLetters = rawDeadLetters
                 .processValues(() -> new HeaderFilter<>(HEADER_ERRORS_EXCEPTION_NAME));
         final KStreamX<Object, DeadLetter> nativeStreamDeadLetters =
-                streamHeaderDeadLetters(rawNativeStreamDeadLetters, new NativeStreamsDeadLetterParser());
+                streamHeaderDeadLetters(rawNativeStreamDeadLetters, new NativeStreamsDeadLetterParser(),
+                        Named.as("native-conversion"));
 
         final KStreamX<Object, Object> rawConnectDeadLetters = rawDeadLetters
                 .processValues(() -> new HeaderFilter<>(ERROR_HEADER_CONNECTOR_NAME))
                 .processValues(NativeDeadLetterFilter::new);
         final KStreamX<Object, DeadLetter> connectDeadLetters =
-                streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser());
+                streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser(),
+                        Named.as("connect-conversion"));
 
         return streamDeadLetters.merge(connectDeadLetters)
                 .merge(streamHeaderDeadLetters)
@@ -194,7 +198,8 @@ class DeadLetterAnalyzerTopology {
                             public Set<StoreBuilder<?>> stores() {
                                 return Set.of(statisticsStore);
                             }
-                        }
+                        },
+                        Named.as("aggregation")
                 );
     }
 

@@ -72,8 +72,10 @@ import org.apache.avro.specific.SpecificRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.assertj.core.api.SoftAssertions;
 import org.assertj.core.api.junit.jupiter.InjectSoftAssertions;
 import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
@@ -315,6 +317,12 @@ class DeadLetterAnalyzerTopologyTest {
         this.assertNoDeadLetters();
     }
 
+    private static String getDeserialized(final Headers headers, final String name) {
+        try (final Deserializer<String> deserializer = new StringDeserializer()) {
+            return deserializer.deserialize(null, headers.lastHeader(name).value());
+        }
+    }
+
     @Test
     void shouldProduceDeadLetterFromAvroDeadLetterAndAnalyze() {
         final TestInput<String, SpecificRecord> input = this.getStreamsInput(Serdes.String());
@@ -338,9 +346,11 @@ class DeadLetterAnalyzerTopologyTest {
         final TestOutput<String, SpecificRecord> deadLetters = this.getDeadLetters();
         this.softly.assertThat(deadLetters.toList())
                 .hasSize(1)
-                .anySatisfy(record -> {
-                    this.softly.assertThat(record.key()).isEqualTo("key");
-                    this.softly.assertThat(record.value()).isEqualTo(deadLetter);
+                .anySatisfy(error -> {
+                    this.softly.assertThat(error.key()).isEqualTo("key");
+                    this.softly.assertThat(error.value()).isEqualTo(deadLetter);
+                    this.softly.assertThat(getDeserialized(error.headers(), HEADER_ERRORS_PROCESSOR_NODE_ID_NAME))
+                            .isEqualTo("analysis");
                 });
         this.softly.assertThat(processedDeadLetters.toList())
                 .hasSize(1)
