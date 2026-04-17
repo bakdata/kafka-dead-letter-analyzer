@@ -104,36 +104,14 @@ class DeadLetterAnalyzerTopology {
         return Preconfigured.create(serde);
     }
 
-    private static <K> void toDeadLetterTopic(final KStreamX<K, DeadLetter> connectDeadLetters) {
-        connectDeadLetters
-                .selectKey((k, v) -> ErrorUtil.toString(k))
-                .toErrorTopic();
-    }
-
     private static <K> KStreamX<K, KeyedDeadLetterWithContext> enrichWithContext(
             final KStreamX<K, DeadLetter> allDeadLetters) {
-        final KErrorStreamX<K, DeadLetter, K, KeyedDeadLetterWithContext> processedDeadLetters =
-                allDeadLetters.processValuesCapturingErrors(ContextEnricher::new);
-
-        final KStreamX<K, DeadLetter> analysisDeadLetters =
-                processedDeadLetters.errors()
-                        .processValues(AvroDeadLetterConverter.asProcessor("Error analyzing dead letter"));
-        toDeadLetterTopic(analysisDeadLetters);
-
-        return processedDeadLetters.values();
+        return allDeadLetters.processValues(ContextEnricher::new, Named.as("analysis"));
     }
 
     private static <K> KStreamX<K, DeadLetter> streamHeaderDeadLetters(final KStreamX<K, Object> input,
-            final DeadLetterParser converterFactory) {
-        final KErrorStreamX<K, Object, K, DeadLetter> processedInput = input.processValuesCapturingErrors(
-                () -> new DeadLetterParserTransformer<>(converterFactory));
-        final KStreamX<K, DeadLetter> deadLetters =
-                processedInput.errors()
-                        .processValues(
-                                AvroDeadLetterConverter.asProcessor("Error converting errors to dead letters"));
-        toDeadLetterTopic(deadLetters);
-
-        return processedInput.values();
+            final DeadLetterParser converterFactory, final Named named) {
+        return input.processValues(() -> new DeadLetterParserTransformer<>(converterFactory), named);
     }
 
     void buildTopology() {
@@ -155,16 +133,6 @@ class DeadLetterAnalyzerTopology {
                 .mapValues(DeadLetterAnalyzerTopology::toErrorExample)
                 .selectKey((k, v) -> toElasticKey(k))
                 .toOutputTopic(EXAMPLES_TOPIC_LABEL);
-    }
-
-    private static <K> KStreamX<K, KeyedDeadLetterWithContext> enrichWithContext(
-            final KStreamX<K, DeadLetter> allDeadLetters) {
-        return allDeadLetters.processValues(ContextEnricher::new, Named.as("analysis"));
-    }
-
-    private static <K> KStreamX<K, DeadLetter> streamHeaderDeadLetters(final KStreamX<K, Object> input,
-            final DeadLetterParser converterFactory, final Named named) {
-        return input.processValues(() -> new DeadLetterParserTransformer<>(converterFactory), named);
     }
 
     private KStreamX<Object, DeadLetter> streamDeadLetters() {
