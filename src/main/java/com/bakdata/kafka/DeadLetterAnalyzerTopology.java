@@ -26,6 +26,7 @@ package com.bakdata.kafka;
 
 import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_CLASS_NAME;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
+import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_EXCEPTION_NAME;
 
 import com.bakdata.kafka.streams.StreamsTopicConfig;
 import com.bakdata.kafka.streams.kstream.ConsumedX;
@@ -136,13 +137,19 @@ class DeadLetterAnalyzerTopology {
         final KStreamX<Object, DeadLetter> streamHeaderDeadLetters =
                 streamHeaderDeadLetters(rawStreamHeaderDeadLetters, new StreamsDeadLetterParser());
 
+        final KStreamX<Object, Object> rawNativeStreamDeadLetters = rawDeadLetters
+                .processValues(() -> new HeaderFilter<>(HEADER_ERRORS_EXCEPTION_NAME));
+        final KStreamX<Object, DeadLetter> nativeStreamDeadLetters =
+                streamHeaderDeadLetters(rawNativeStreamDeadLetters, new NativeStreamsDeadLetterParser());
+
         final KStreamX<Object, Object> rawConnectDeadLetters = rawDeadLetters
                 .processValues(() -> new HeaderFilter<>(ERROR_HEADER_CONNECTOR_NAME));
         final KStreamX<Object, DeadLetter> connectDeadLetters =
                 streamHeaderDeadLetters(rawConnectDeadLetters, new ConnectDeadLetterParser());
 
         return streamDeadLetters.merge(connectDeadLetters)
-                .merge(streamHeaderDeadLetters);
+                .merge(streamHeaderDeadLetters)
+                .merge(nativeStreamDeadLetters);
     }
 
     private static <K> void toDeadLetterTopic(final KStreamX<K, DeadLetter> connectDeadLetters) {
