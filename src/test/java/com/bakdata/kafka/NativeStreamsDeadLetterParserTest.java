@@ -25,8 +25,8 @@
 package com.bakdata.kafka;
 
 import static com.bakdata.kafka.ConnectDeadLetterParserTest.toBytes;
-import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
-import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_EXCEPTION_MESSAGE_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_EXCEPTION_NAME;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_OFFSET_NAME;

@@ -24,8 +24,8 @@
 
 package com.bakdata.kafka;
 
-import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
-import static com.bakdata.kafka.DescribingProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
 import static com.bakdata.kafka.HeaderHelper.getHeader;
 import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_EXCEPTION_MESSAGE_NAME;
