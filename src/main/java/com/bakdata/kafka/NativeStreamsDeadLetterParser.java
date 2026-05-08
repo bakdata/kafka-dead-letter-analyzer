@@ -24,6 +24,8 @@
 
 package com.bakdata.kafka;
 
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
 import static com.bakdata.kafka.HeaderHelper.getHeader;
 import static com.bakdata.kafka.HeaderHelper.missingRequiredHeader;
 import static org.apache.kafka.streams.errors.internals.ExceptionHandlerUtils.HEADER_ERRORS_EXCEPTION_MESSAGE_NAME;
@@ -51,6 +53,10 @@ class NativeStreamsDeadLetterParser implements DeadLetterParser {
         final long offset = getHeader(headers, HEADER_ERRORS_OFFSET_NAME)
                 .map(HeaderHelper::longValue)
                 .orElseThrow(missingRequiredHeader(HEADER_ERRORS_OFFSET_NAME));
+        final Optional<String> processorNodeId = getHeader(headers, HEADER_ERRORS_PROCESSOR_NODE_ID_NAME)
+                .flatMap(HeaderHelper::stringValue);
+        final Optional<String> taskId = getHeader(headers, HEADER_ERRORS_TASK_ID_NAME)
+                .flatMap(HeaderHelper::stringValue);
         final String errorClass = getHeader(headers, HEADER_ERRORS_EXCEPTION_NAME)
                 .flatMap(HeaderHelper::stringValue)
                 .orElseThrow(missingRequiredHeader(HEADER_ERRORS_EXCEPTION_NAME));
@@ -64,12 +70,15 @@ class NativeStreamsDeadLetterParser implements DeadLetterParser {
                 .setMessage(message.orElse(null))
                 .setStackTrace(stackTrace)
                 .build();
+        final String description =
+                String.format("Error in processor node %s in task %s", processorNodeId.orElse("[unknown]"),
+                        taskId.orElse("[unknown]"));
         return DeadLetter.newBuilder()
                 .setPartition(partition)
                 .setTopic(topic.orElse(null))
                 .setOffset(offset)
                 .setInputValue(Optional.ofNullable(value).map(ErrorUtil::toString).orElse(null))
-                .setDescription("Error processing record")
+                .setDescription(description)
                 .setCause(errorDescription)
                 // Kafka Streams propagates the timestamp of the original message
                 .setInputTimestamp(Instant.ofEpochMilli(recordTimestamp))
