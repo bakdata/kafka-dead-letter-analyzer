@@ -34,6 +34,8 @@ import static com.bakdata.kafka.ErrorHeaderProcessor.EXCEPTION_STACK_TRACE;
 import static com.bakdata.kafka.ErrorHeaderProcessor.OFFSET;
 import static com.bakdata.kafka.ErrorHeaderProcessor.PARTITION;
 import static com.bakdata.kafka.ErrorHeaderProcessor.TOPIC;
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_PROCESSOR_NODE_ID_NAME;
+import static com.bakdata.kafka.FilteringProcessingExceptionHandler.HEADER_ERRORS_TASK_ID_NAME;
 import static com.bakdata.kafka.Formatter.DATE_TIME_FORMATTER;
 import static com.bakdata.kafka.HeaderLargeMessagePayloadProtocol.getHeaderName;
 import static org.apache.kafka.connect.runtime.errors.DeadLetterQueueReporter.ERROR_HEADER_CONNECTOR_NAME;
@@ -561,6 +563,8 @@ class DeadLetterAnalyzerTopologyTest {
                 .add(HEADER_ERRORS_PARTITION_NAME, toBytes(1))
                 .add(HEADER_ERRORS_TOPIC_NAME, toBytes("my-topic"))
                 .add(HEADER_ERRORS_OFFSET_NAME, toBytes(10L))
+                .add(HEADER_ERRORS_PROCESSOR_NODE_ID_NAME, toBytes("processor"))
+                .add(HEADER_ERRORS_TASK_ID_NAME, toBytes("task"))
                 .add(HEADER_ERRORS_EXCEPTION_NAME, toBytes("org.apache.kafka.connect.errors.DataException"))
                 .add(HEADER_ERRORS_EXCEPTION_MESSAGE_NAME, toBytes("my message"))
                 .add(HEADER_ERRORS_STACKTRACE_NAME, toBytes(StackTraceClassifierTest.STACK_TRACE));
@@ -574,7 +578,7 @@ class DeadLetterAnalyzerTopologyTest {
                         .setMessage("my message")
                         .setStackTrace(StackTraceClassifierTest.STACK_TRACE)
                         .build())
-                .setDescription("Error processing record")
+                .setDescription("Error in processor node processor in task task")
                 .setPartition(1)
                 .setTopic("my-topic")
                 .setOffset(10L)
