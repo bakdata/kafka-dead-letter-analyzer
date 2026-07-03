@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.3.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.3.0) - 2026-07-03
+### What's changed
+
+* Support Kafka Streams built-in dead letter queue by @philipp94831 in [#55](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/55)
+
+* Use streams-bootstrap error handling by @philipp94831 in [#58](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/58)
+
+* Clean up code by @philipp94831 in [#59](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/59)
+
+* Bump the "build" group with 2 updates across multiple ecosystems by @dependabot[bot] in [#61](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/61)
+
+* Bump the "build" group with 1 update across multiple ecosystems by @dependabot[bot] in [#64](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/64)
+
+* Bump org.apache.logging.log4j:log4j-slf4j2-impl from 2.25.4 to 2.26.0 in the log-dependencies group by @dependabot[bot] in [#62](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/62)
+
+* Bump org.junit.jupiter:junit-jupiter from 6.0.3 to 6.1.0 in the test-dependencies group by @dependabot[bot] in [#63](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/63)
+
+* Bump the "build" group with 2 updates across multiple ecosystems by @dependabot[bot] in [#66](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/66)
+
+* Bump the kafka-dependencies group across 1 directory with 4 updates by @dependabot[bot] in [#67](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/67)
+
+* Add processor node and task id to built-in dead letter queue by @philipp94831 in [#56](https://github.com/bakdata/kafka-dead-letter-analyzer/pull/56)
+
+
+**Full Changelog**: https://github.com/bakdata/kafka-dead-letter-analyzer/compare/3.2.0...3.3.0
+
 ## [3.2.0](https://github.com/bakdata/kafka-dead-letter-analyzer/tree/3.2.0) - 2026-04-07
 ### What's changed
 
