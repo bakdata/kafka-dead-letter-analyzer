@@ -80,15 +80,15 @@ class ErrorAggregatingProcessor
     }
 
     @Override
-    public void process(final FixedKeyRecord<ErrorKey, DeadLetterWithContext> record) {
-        final ErrorKey key = record.key();
-        final DeadLetterWithContext deadLetterWithContext = record.value();
+    public void process(final FixedKeyRecord<ErrorKey, DeadLetterWithContext> inputRecord) {
+        final ErrorKey key = inputRecord.key();
+        final DeadLetterWithContext deadLetterWithContext = inputRecord.value();
         final ErrorStatistics newStatistics = newStatistics(deadLetterWithContext);
         final Result result = this.getStatistics(key)
                 .map(oldStatistics -> updatedResult(oldStatistics, newStatistics))
                 .orElseGet(() -> newResult(deadLetterWithContext, newStatistics));
         this.statisticsStore.put(key, result.getStatistics());
-        this.context.forward(record.withValue(result));
+        this.context.forward(inputRecord.withValue(result));
     }
 
     @Override
