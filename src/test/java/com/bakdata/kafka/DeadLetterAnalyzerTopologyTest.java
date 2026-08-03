@@ -58,7 +58,7 @@ import static org.jooq.lambda.Seq.seq;
 
 import com.bakdata.fluent_kafka_streams_tests.TestInput;
 import com.bakdata.fluent_kafka_streams_tests.TestOutput;
-import com.bakdata.fluent_kafka_streams_tests.junit5.TestTopologyExtension;
+import com.bakdata.fluent_kafka_streams_tests.junitjupiter.TestTopologyExtension;
 import com.bakdata.kafka.streams.ConfiguredStreamsApp;
 import com.bakdata.kafka.streams.StreamsApp;
 import com.bakdata.kafka.streams.StreamsAppConfiguration;
