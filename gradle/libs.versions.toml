@@ -4,12 +4,15 @@ kafka-streams-avro-serde = { group = "io.confluent", name = "kafka-streams-avro-
 kafka-connect-runtime = { group = "org.apache.kafka", name = "connect-runtime" }
 largeMessage-bom = { group = "com.bakdata.kafka", name = "large-message-bom", version = "4.0.0" }
 largeMessage-serde = { group = "com.bakdata.kafka", name = "large-message-serde" }
+largeMessage-s3 = { group = "com.bakdata.kafka", name = "large-message-amazon-s3" }
+largeMessage-gcs = { group = "com.bakdata.kafka", name = "large-message-google-cloud-storage" }
+largeMessage-abs = { group = "com.bakdata.kafka", name = "large-message-azure-blob-storage" }
 errorHandling-bom = { group = "com.bakdata.kafka", name = "error-handling-bom", version = "3.0.0" }
 errorHandling-avro = { group = "com.bakdata.kafka", name = "error-handling-avro" }
 streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "7.5.0" }
 streamsBootstrap-largeMessage = { group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages" }
 streamsBootstrap-cli = { group = "com.bakdata.kafka", name = "streams-bootstrap-cli" }
-bruteForce-serde = { group = "com.bakdata.kafka", name = "brute-force-serde", version = "2.0.0" }
+bruteForce-serde = { group = "com.bakdata.kafka", name = "brute-force-serde", version = "2.1.0" }
 jool = { group = "org.jooq", name = "jool", version = "0.9.15" }
 log4j-slf4j2 = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl", version = "2.26.1" }
 
