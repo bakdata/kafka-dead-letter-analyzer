@@ -51,6 +51,9 @@ dependencies {
     implementation(libs.streamsBootstrap.cli)
     implementation(libs.bruteForce.serde)
     implementation(libs.largeMessage.serde)
+    implementation(libs.largeMessage.s3)
+    implementation(libs.largeMessage.gcs)
+    implementation(libs.largeMessage.abs)
     implementation(libs.jool)
     implementation(libs.log4j.slf4j2)
 
