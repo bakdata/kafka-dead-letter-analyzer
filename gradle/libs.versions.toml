@@ -1,5 +1,5 @@
 [libraries]
-kafka-bom = { group = "com.bakdata.kafka", name = "kafka-bom", version = "2.0.0" }
+kafka-bom = { group = "com.bakdata.kafka", name = "kafka-bom", version = "2.0.1" }
 kafka-streams-avro-serde = { group = "io.confluent", name = "kafka-streams-avro-serde" }
 kafka-connect-runtime = { group = "org.apache.kafka", name = "connect-runtime" }
 largeMessage-bom = { group = "com.bakdata.kafka", name = "large-message-bom", version = "4.0.0" }
@@ -9,7 +9,7 @@ largeMessage-gcs = { group = "com.bakdata.kafka", name = "large-message-google-c
 largeMessage-abs = { group = "com.bakdata.kafka", name = "large-message-azure-blob-storage" }
 errorHandling-bom = { group = "com.bakdata.kafka", name = "error-handling-bom", version = "3.0.0" }
 errorHandling-avro = { group = "com.bakdata.kafka", name = "error-handling-avro" }
-streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "7.5.0" }
+streamsBootstrap-bom = { group = "com.bakdata.kafka", name = "streams-bootstrap-bom", version = "7.5.1" }
 streamsBootstrap-largeMessage = { group = "com.bakdata.kafka", name = "streams-bootstrap-large-messages" }
 streamsBootstrap-cli = { group = "com.bakdata.kafka", name = "streams-bootstrap-cli" }
 bruteForce-serde = { group = "com.bakdata.kafka", name = "brute-force-serde", version = "2.1.0" }
